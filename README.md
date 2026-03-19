@@ -105,7 +105,7 @@ python -m tests.test_phase4    # WebSocket + integration (12 tests)
 ---
 
 
-# Project Chronos — ICU Entropy Monitoring Dashboard
+## Monitoring Dashboard
 
 Real-time ICU monitoring dashboard that visualizes patient deterioration through entropy analysis of physiological signals. Built for the detection of clinical decline hours before traditional alarm systems trigger.
 
