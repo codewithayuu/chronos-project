@@ -1,0 +1,278 @@
+/* Outer shell: Double-Bezel architecture */
+.patient-card-outer {
+  border-radius: var(--radius-xl);
+  background: var(--card-severity-bg);
+  border: 1px solid var(--card-severity-border);
+  padding: 3px;
+  transition: all var(--duration-normal) var(--ease-out-expo);
+  animation: fade-in-up 500ms var(--ease-out-expo) both;
+}
+
+.patient-card-outer:hover {
+  border-color: color-mix(in srgb, var(--card-severity-color) 30%, transparent);
+}
+
+/* Inner card */
+.patient-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  padding: 20px;
+  border-radius: calc(var(--radius-xl) - 3px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  transition: all var(--duration-normal) var(--ease-out-expo);
+  overflow: hidden;
+}
+
+.patient-card:hover {
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-card-hover), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.patient-card:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* Severity pulse animations */
+.patient-card.pulse-critical {
+  animation: critical-pulse 1s infinite;
+}
+
+.patient-card.pulse-warning {
+  animation: warning-pulse 2s infinite;
+}
+
+.patient-card.pulse-watch {
+  animation: watch-pulse 3s infinite;
+}
+
+/* Keyboard focus styles */
+.patient-card:focus-visible {
+  outline: 2px solid var(--accent-teal);
+  outline-offset: 4px;
+}
+
+.patient-card:focus-visible .card-patient-id {
+  color: var(--accent-teal);
+}
+
+/* Calibrating overlay */
+.card-calibrating-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(10, 10, 26, 0.88);
+  backdrop-filter: blur(6px);
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calibrating-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.calibrating-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  animation: float 2s ease-in-out infinite;
+}
+
+.calibrating-bar-track {
+  width: 100px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.calibrating-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--accent-teal);
+  transition: width 1s var(--ease-out-expo);
+}
+
+.calibrating-pct {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Card header */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-id-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-severity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--card-severity-color);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--card-severity-color) 40%, transparent);
+}
+
+.card-patient-id {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: 0.02em;
+}
+
+.card-severity-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid;
+}
+
+/* CES Section */
+.card-ces-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-ces-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.card-ces-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-ces-value {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  transition: color var(--duration-fast) ease;
+}
+
+.card-ces-bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.card-ces-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 800ms var(--ease-out-expo), background 400ms ease;
+}
+
+/* Sparkline */
+.card-sparkline-container {
+  padding: 4px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Vitals Grid */
+.card-vitals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.card-vital-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+}
+
+.card-vital-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.card-vital-value-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-vital-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Footer */
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 24px;
+}
+
+.card-drug-tag,
+.card-time-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.card-drug-tag svg {
+  color: var(--accent-teal);
+}
+
+.card-time-tag svg {
+  color: var(--color-watch);
+}

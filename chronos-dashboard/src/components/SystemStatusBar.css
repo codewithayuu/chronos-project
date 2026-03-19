@@ -1,0 +1,70 @@
+.system-status-bar {
+  padding-top: 24px;
+  margin-top: 12px;
+}
+
+.status-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.status-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.status-bar-item svg {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.status-bar-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-bar-indicator.is-connected {
+  color: var(--color-none);
+}
+
+.status-bar-indicator.is-connected svg {
+  color: var(--color-none);
+}
+
+.status-bar-indicator.is-disconnected {
+  color: var(--color-warning);
+}
+
+.status-bar-indicator.is-disconnected svg {
+  color: var(--color-warning);
+}
+
+.status-bar-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.status-bar-evidence {
+  color: var(--accent-teal);
+}
+
+.status-bar-evidence svg {
+  color: var(--accent-teal) !important;
+}
