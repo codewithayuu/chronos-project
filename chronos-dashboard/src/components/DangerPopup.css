@@ -1,0 +1,222 @@
+.danger-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.danger-critical {
+  background: rgba(255, 23, 68, 0.08);
+  backdrop-filter: blur(8px);
+  animation: danger-bg-pulse-critical 1s infinite;
+}
+
+.danger-warning {
+  background: rgba(255, 110, 64, 0.06);
+  backdrop-filter: blur(6px);
+  animation: danger-bg-pulse-warning 2s infinite;
+}
+
+@keyframes danger-bg-pulse-critical {
+  0%, 100% { background: rgba(255, 23, 68, 0.08); }
+  50% { background: rgba(255, 23, 68, 0.15); }
+}
+
+@keyframes danger-bg-pulse-warning {
+  0%, 100% { background: rgba(255, 110, 64, 0.06); }
+  50% { background: rgba(255, 110, 64, 0.10); }
+}
+
+.danger-popup-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow:
+    0 24px 80px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.danger-severity-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.danger-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  z-index: 2;
+}
+
+.danger-close-btn:hover { color: var(--text-primary); }
+
+.danger-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-icon {
+  filter: drop-shadow(0 0 16px currentColor);
+}
+
+.danger-severity-text {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 20px currentColor;
+}
+
+.danger-patient-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.danger-bed-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.danger-bed-number {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.danger-patient-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.danger-message {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 380px;
+}
+
+.danger-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.danger-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.danger-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.danger-metric-value {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.danger-drug-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent-blue) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 20%, transparent);
+  font-size: 11px;
+  color: var(--accent-blue);
+  width: 100%;
+}
+
+.danger-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.danger-go-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.danger-dismiss-btn {
+  padding: 12px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-dismiss-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.danger-timer-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  opacity: 0.5;
+}
