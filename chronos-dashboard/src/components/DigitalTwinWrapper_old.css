@@ -1,0 +1,160 @@
+.twin-panel {
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.twin-calibrating {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.twin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.twin-overall-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.twin-refresh-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+}
+
+.twin-refresh-btn:hover { color: var(--text-primary); }
+
+.twin-drug-warning {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent-blue) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 15%, transparent);
+  font-size: 11px;
+  color: var(--accent-blue);
+}
+
+.twin-region-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.twin-region-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.015);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out-expo);
+}
+
+.twin-region-critical { border-color: color-mix(in srgb, var(--color-critical) 30%, transparent); }
+.twin-region-warning { border-color: color-mix(in srgb, var(--color-warning) 25%, transparent); }
+.twin-region-watch { border-color: color-mix(in srgb, var(--color-watch) 20%, transparent); }
+
+.twin-region-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.twin-region-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.twin-region-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.twin-region-bar-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.twin-region-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.twin-region-danger {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.twin-region-alerts {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.twin-region-alert-text {
+  font-size: 10px;
+  color: var(--color-warning);
+  line-height: 1.3;
+}
+
+.twin-region-detail {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-subtle);
+}
+
+.twin-region-detail h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.twin-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.twin-metric-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.twin-metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: capitalize;
+}
+
+.twin-metric-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}

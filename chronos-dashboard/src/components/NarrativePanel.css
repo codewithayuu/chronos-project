@@ -1,0 +1,122 @@
+.narrative-panel { overflow: hidden; }
+
+.narrative-loading {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.narrative-skeleton {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--bg-surface) 25%, rgba(255,255,255,0.04) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.narrative-skeleton-short { width: 65%; }
+
+.narrative-refresh-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+}
+
+.narrative-refresh-btn:hover { color: var(--text-primary); }
+
+/* Summary section */
+.narrative-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.narrative-overview-text {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.narrative-risk-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid var(--accent-teal);
+}
+
+.narrative-severity-warning .narrative-risk-text {
+  border-left-color: var(--color-warning);
+}
+
+.narrative-severity-critical .narrative-risk-text {
+  border-left-color: var(--color-critical);
+}
+
+/* Expand toggle */
+.narrative-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.narrative-expand-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Detail sections */
+.narrative-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.narrative-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.narrative-section-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.narrative-section-text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.narrative-severity-warning .narrative-overview-text,
+.narrative-severity-critical .narrative-overview-text {
+  color: var(--text-primary);
+}
