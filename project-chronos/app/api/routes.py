@@ -624,4 +624,64 @@ def create_router() -> APIRouter:
             "warnings": _generate_drug_warnings(state, drug_req, effects),
         }
 
+    # -- ML Augmentation Endpoints (Person 3) --
+
+    @router.get("/patients/{patient_id}/ml-predictions")
+    def get_ml_predictions(patient_id: str, request: Request):
+        """Get ML predictions (deterioration risk + syndrome classification) for a patient."""
+        manager = _mgr(request)
+        state = manager.get_patient_state(patient_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
+        ml_state = manager.get_ml_state(patient_id)
+        return ml_state.get("ml_predictions", {"warmup_mode": True})
+
+    @router.get("/patients/{patient_id}/fusion")
+    def get_fusion(patient_id: str, request: Request):
+        """Get decision fusion result for a patient."""
+        manager = _mgr(request)
+        state = manager.get_patient_state(patient_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
+        ml_state = manager.get_ml_state(patient_id)
+        return ml_state.get("fusion", {"final_risk_score": 0, "final_severity": "NONE"})
+
+    @router.get("/patients/{patient_id}/detectors")
+    def get_detectors(patient_id: str, request: Request):
+        """Get active detector results for a patient."""
+        manager = _mgr(request)
+        state = manager.get_patient_state(patient_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
+        ml_state = manager.get_ml_state(patient_id)
+        return ml_state.get("detectors", [])
+
+    @router.get("/patients/{patient_id}/recommendations")
+    def get_recommendations(patient_id: str, request: Request):
+        """Get intervention recommendations + suggested tests for a patient."""
+        manager = _mgr(request)
+        state = manager.get_patient_state(patient_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
+        ml_state = manager.get_ml_state(patient_id)
+        return ml_state.get("recommendations", {"interventions": [], "suggested_tests": []})
+
+    @router.get("/ml/status")
+    def get_ml_status(request: Request):
+        """Get ML system status — which models are loaded and operational."""
+        manager = _mgr(request)
+        pred_ok = getattr(manager.deterioration_predictor, 'available', False)
+        clf_ok = getattr(manager.syndrome_classifier, 'available', False)
+        return {
+            "deterioration_predictor": {
+                "loaded": pred_ok,
+                "models": ["1h", "4h", "8h"],
+            },
+            "syndrome_classifier": {
+                "loaded": clf_ok,
+            },
+            "fusion": {"enabled": True},
+            "detectors": {"count": 8, "enabled": True},
+        }
+
     return router

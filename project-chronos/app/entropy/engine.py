@@ -1,15 +1,4 @@
-"""
-Entropy Engine — The core intelligence layer of Project Chronos.
 
-Responsibilities:
-  1. Maintain sliding windows of vital signs per patient
-  2. Compute SampEn for each vital sign
-  3. Compute Composite Entropy Score (CES)
-  4. Detect trends (rising/stable/falling)
-  5. Classify alert severity
-  6. Estimate time to predicted event
-  7. Compute MSE on demand (for deep-dive views)
-"""
 
 import numpy as np
 from collections import deque

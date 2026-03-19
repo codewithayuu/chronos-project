@@ -1,13 +1,4 @@
-"""
-SampEn normalization parameters.
 
-These min/max ranges define the expected SampEn range for each vital sign
-in ICU populations. Derived from literature values for m=2, r=0.2*SD, N≈300.
-
-Used to normalize raw SampEn values to [0, 1] for the Composite Entropy Score.
-  - 0.0 = minimum expected complexity (very regular / concerning)
-  - 1.0 = maximum expected complexity (healthy variability)
-"""
 
 import numpy as np
 from typing import Optional
