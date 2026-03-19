@@ -1,14 +1,3 @@
-"""
-WebSocket Connection Manager for Project Chronos.
-
-Manages multiple connected clients and broadcasts patient state
-updates and alert events in real-time.
-
-Message format:
-  { "event": "patient_update", "data": { ...PatientState... } }
-  { "event": "new_alert", "data": { ...AlertObject... } }
-  { "event": "system_status", "data": { ...status... } }
-"""
 
 import asyncio
 import json

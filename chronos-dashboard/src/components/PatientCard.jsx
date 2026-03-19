@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Heartbeat,
@@ -33,7 +32,6 @@ const TrendArrow = React.memo(function TrendArrow({ trend }) {
 });
 
 function PatientCard({ patient, sparklineData }) {
-  const navigate = useNavigate();
 
   const severity = patient.alert_severity || patient.alert?.severity || 'NONE';
   const config = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.NONE;
@@ -50,9 +48,7 @@ function PatientCard({ patient, sparklineData }) {
   const drugs = patient.active_drugs || [];
   const hoursToEvent = patient.alert?.hours_to_predicted_event;
 
-  const handleClick = () => {
-    navigate(`/patient/${patient.patient_id}`);
-  };
+
 
   const bedLabel = patient.patient_id
     ? patient.patient_id.replace('HERO-', '').replace('STABLE-', 'STB-')
@@ -69,16 +65,10 @@ function PatientCard({ patient, sparklineData }) {
         '--card-severity-border': config.border,
       }}
     >
-      <motion.button
+      <motion.div
         className={`patient-card ${config.pulseClass}`}
-        onClick={handleClick}
-        whileHover={{
-          y: -3,
-          transition: { type: 'spring', stiffness: 400, damping: 25 },
-        }}
-        whileTap={{ scale: 0.985, y: 0 }}
         animate={pulseAnimation}
-        aria-label={`View details for patient ${patient.patient_id}. Severity: ${config.label}`}
+        aria-label={`Patient ${patient.patient_id}. Severity: ${config.label}`}
       >
         {/* Calibrating Overlay */}
         {isCalibrating && (
@@ -252,7 +242,7 @@ function PatientCard({ patient, sparklineData }) {
             </motion.div>
           )}
         </div>
-      </motion.button>
+      </motion.div>
     </div>
   );
 }

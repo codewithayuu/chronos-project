@@ -9,7 +9,7 @@
 }
 
 .patient-card-outer:hover {
-  border-color: color-mix(in srgb, var(--card-severity-color) 30%, transparent);
+  border-color: var(--card-severity-border);
 }
 
 /* Inner card */
@@ -24,7 +24,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  cursor: pointer;
+  cursor: default;
   text-align: left;
   font-family: var(--font-sans);
   color: var(--text-primary);
@@ -32,15 +32,7 @@
   overflow: hidden;
 }
 
-.patient-card:hover {
-  background: var(--bg-card-hover);
-  box-shadow: var(--shadow-card-hover), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  transform: translateY(-2px);
-}
-
-.patient-card:active {
-  transform: translateY(0) scale(0.985);
-}
+/* .patient-card:hover and :active disabled — cards are non-interactive */
 
 /* Severity pulse animations */
 .patient-card.pulse-critical {
@@ -55,14 +47,9 @@
   animation: watch-pulse 3s infinite;
 }
 
-/* Keyboard focus styles */
+/* Keyboard focus styles — disabled */
 .patient-card:focus-visible {
-  outline: 2px solid var(--accent-teal);
-  outline-offset: 4px;
-}
-
-.patient-card:focus-visible .card-patient-id {
-  color: var(--accent-teal);
+  outline: none;
 }
 
 /* Calibrating overlay */

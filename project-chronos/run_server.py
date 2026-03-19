@@ -1,16 +1,3 @@
-"""
-Start the Project Chronos API server with background replay.
-
-Usage:
-    python run_server.py                  # Default: port 8000, auto-replay ON
-    python run_server.py --port 8001      # Custom port
-    python run_server.py --no-replay      # Disable auto-replay (use run_replay.py)
-
-Environment variables:
-    CHRONOS_SPEED=60         Replay speed multiplier (default: 60)
-    CHRONOS_LOOP=true        Loop replay when finished (default: true)
-    CHRONOS_AUTO_REPLAY=true Start replay automatically (default: true)
-"""
 
 import argparse
 import os

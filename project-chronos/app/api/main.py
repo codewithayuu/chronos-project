@@ -1,11 +1,3 @@
-"""
-FastAPI Application — Project Chronos API + WebSocket + Background Replay.
-
-Start with:
-    python run_server.py
-Or:
-    uvicorn app.api.main:app --host 0.0.0.0 --port 8000
-"""
 
 import os
 import asyncio

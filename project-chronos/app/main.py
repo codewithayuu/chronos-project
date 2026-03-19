@@ -1,12 +1,3 @@
-"""
-Project Chronos — FastAPI Application Entry Point.
-
-Start with:
-    python -m app.main
-    or:
-    uvicorn app.main:app --host 0.0.0.0 --port8000 --reload
-"""
-
 import asyncio
 import logging
 from contextlib import asynccontextmanager

@@ -1,7 +1,4 @@
-"""
-All Pydantic data models for Project Chronos.
-These define the exact shape of every data object flowing through the system.
-"""
+
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any

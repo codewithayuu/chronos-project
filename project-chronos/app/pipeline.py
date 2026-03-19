@@ -1,10 +1,3 @@
-"""
-Chronos Pipeline — Central orchestrator.
-
-Wires together: Entropy Engine → Drug Filter → Evidence Engine
-
-This is the single object that API layer and replay service interact with.
-"""
 
 from collections import deque
 from datetime import datetime, timedelta

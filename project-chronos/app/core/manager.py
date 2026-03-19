@@ -1,18 +1,3 @@
-"""
-Patient State Manager — Central orchestrator for Project Chronos.
-
-Wires together:
-  - Entropy Engine (Layer 1)
-  - Drug Filter (Layer 2)
-  - Evidence Engine (Layer 3)
-  - Clinical Scores (Phase 2)
-  - Alarm Fatigue Tracker (Phase 3)
-
-Also manages:
-  - Per-patient drug tracking
-  - State history (for charts/API)
-  - Alert lifecycle (creation, tracking, acknowledgment)
-"""
 
 import uuid
 from datetime import datetime

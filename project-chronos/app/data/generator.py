@@ -1,14 +1,3 @@
-"""
-Synthetic ICU Data Generator.
-
-Creates hero cases (patients with specific deterioration patterns)
-and filler patients (stable patients for ward view).
-
-Each hero case demonstrates a key Chronos capability:
-  Hero 1: "Silent Sepsis" — entropy drops 4+ hours before vitals crash
-  Hero 2: "Masked Respiratory Failure" — Propofol hides RR decline
-  Hero 3: "Controlled Cardiac Crash" — Metoprolol masks HR entropy loss
-"""
 
 import numpy as np
 from dataclasses import dataclass, field

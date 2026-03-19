@@ -1,9 +1,3 @@
-"""
-Data Replay Service.
-
-Streams pre-generated patient data to pipeline at configurable speed.
-Acts as a simulated bedside monitor feed.
-"""
 
 import asyncio
 from typing import List, Optional

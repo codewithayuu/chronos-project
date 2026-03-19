@@ -1,8 +1,3 @@
-"""
-REST API Routes for Project Chronos.
-
-All routes access the PatientManager via request.app.state.manager.
-"""
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel

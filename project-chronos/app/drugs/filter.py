@@ -1,15 +1,3 @@
-"""
-Drug Awareness Filter — Layer 2 of Project Chronos.
-
-Prevents false alarms from expected drug effects.
-Detects drug masking (drugs hiding true deterioration).
-
-This filter modifies:
-  - composite_entropy (adjusted for drug effects)
-  - alert.severity (may change based on adjusted CES)
-  - alert.drug_masked (flagged if masking detected)
-  - alert.message (enriched with drug context)
-"""
 
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List

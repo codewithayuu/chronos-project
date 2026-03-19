@@ -1,8 +1,3 @@
-"""
-Drug Database — Pharmacological lookup table.
-
-Loads drug profiles from a JSON file and provides lookup by name or class.
-"""
 
 import json
 from pathlib import Path
