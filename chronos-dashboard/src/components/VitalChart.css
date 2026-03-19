@@ -1,0 +1,128 @@
+.vital-chart-container {
+  padding: 14px 18px 10px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color var(--duration-normal) var(--ease-out-expo);
+}
+
+.vital-chart-container.is-contributing {
+  border-left: 3px solid var(--contributing-color);
+  background: color-mix(in srgb, var(--bg-card) 96%, var(--contributing-color) 4%);
+}
+
+/* Header */
+.vital-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.vital-chart-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vital-chart-contributing-indicator {
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--contributing-color);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--contributing-color) 40%, transparent);
+}
+
+.vital-chart-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+}
+
+.vital-chart-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.vital-chart-contributing-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--contributing-color) 10%, transparent);
+  color: var(--contributing-color);
+  border: 1px solid color-mix(in srgb, var(--contributing-color) 20%, transparent);
+}
+
+.vital-chart-current {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.vital-chart-current-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+}
+
+.vital-chart-current-unit {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* Body */
+.vital-chart-body {
+  margin: 0 -6px;
+}
+
+/* Tooltip */
+.vital-tooltip {
+  background: rgba(20, 20, 43, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.vital-tooltip-time {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.vital-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vital-tooltip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vital-tooltip-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.vital-tooltip-label {
+  font-size: 10px;
+  color: var(--text-dim);
+}
