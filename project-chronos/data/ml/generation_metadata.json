@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-03-19T20:31:45.623147",
+  "seed": 42,
+  "real_trajectories": 119,
+  "statistical_clones": 595,
+  "simulations": 200,
+  "total_trajectories": 914,
+  "total_samples": 41438,
+  "num_features": 45,
+  "train_samples": 28995,
+  "val_samples": 6264,
+  "test_samples": 6179,
+  "label_balance": {
+    "1h_positive_rate": 0.22563830300690188,
+    "4h_positive_rate": 0.348038032723587,
+    "8h_positive_rate": 0.4230899174670592
+  },
+  "syndrome_distribution": {
+    "sepsis_like": 1840,
+    "respiratory_failure": 1978,
+    "hemodynamic_instability": 2068,
+    "cardiac_instability": 2392,
+    "stable": 33160
+  }
+}

@@ -1,0 +1,1449 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\ayush\Downloads\project\project-chronos
+plugins: anyio-4.12.1, langsmith-0.7.20
+collected 59 items
+
+tests\test_phase1.py ....................                                [ 33%]
+tests\test_phase2.py ...............                                     [ 59%]
+tests\test_phase3.py ...FFFF.FFFF                                        [ 79%]
+tests\test_phase4.py ..F.F.......                                        [100%]
+
+================================== FAILURES ===================================
+_________________________ test_pipeline_process_vital _________________________
+
+    def test_pipeline_process_vital():
+        """Pipeline should process vitals through all layers."""
+        pipeline, _ = _make_test_pipeline(50)
+        np.random.seed(42)
+        base_time = datetime(2024, 1, 15, 10, 0, 0)
+    
+        for i in range(60):
+            record = VitalSignRecord(
+                patient_id="P001",
+                timestamp=base_time + timedelta(minutes=i),
+                heart_rate=75 + np.random.randn() * 8,
+                spo2=97 + np.random.randn(),
+                bp_systolic=120 + np.random.randn() * 10,
+                bp_diastolic=80 + np.random.randn() * 6,
+                resp_rate=16 + np.random.randn() * 2,
+                temperature=37.0 + np.random.randn() * 0.2,
+            )
+>           state = pipeline.process_vital(record)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_phase3.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.pipeline.ChronosPipeline object at 0x0000000070EAAAB0>
+record = VitalSignRecord(patient_id='P001', timestamp=datetime.datetime(2024, 1, 15, 10, 0), heart_rate=78.97371322408986, spo2...stolic=126.47688538100692, bp_diastolic=89.13817913844815, resp_rate=15.531693250553328, temperature=36.95317260861017)
+
+    def process_vital(self, record: VitalSignRecord) -> PatientState:
+        """
+        Process a single vital-sign record through the full pipeline.
+    
+        Steps:
+          1. Entropy Engine computes SampEn, CES, trends, alert
+          2. Drug Filter adjusts CES for active medications
+          3. Evidence Engine provides intervention suggestions
+          4. State is stored in history
+    
+        Returns a complete PatientState.
+        """
+        pid = record.patient_id
+    
+        # Step 1: Entropy Engine
+        state = self.entropy_engine.process_vital(record)
+    
+        if not state.calibrating:
+            # Step 2: Drug Filter
+            active_drugs = self.get_active_drugs(pid, record.timestamp)
+            if active_drugs:
+                state.active_drugs = active_drugs
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                state = self.drug_filter.apply(state, baselines)
+    
+            # Step 3: Evidence Engine (only when alert is active)
+            if state.alert.active:
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                interventions = self.evidence_engine.query(state, baselines)
+                state.interventions = interventions
+    
+                # Track alert
+                self._track_alert(state)
+    
+        # Phase 1: Traditional alarm comparison
+        traditional_alarm = False
+        traditional_alarm_vitals = []
+        _thresholds = {
+            "heart_rate": (50.0, 120.0),
+            "spo2": (90.0, 100.0),
+            "bp_systolic": (90.0, 180.0),
+            "bp_diastolic": (40.0, 110.0),
+            "resp_rate": (8.0, 30.0),
+            "temperature": (35.5, 38.5),
+        }
+        for _vname, (_low, _high) in _thresholds.items():
+            _val = getattr(record, _vname, None)
+            if _val is not None and (_val < _low or _val > _high):
+                traditional_alarm = True
+                traditional_alarm_vitals.append(_vname)
+    
+        state.traditional_alarm = traditional_alarm
+        state.traditional_alarm_vitals = traditional_alarm_vitals
+    
+        # Phase 2: Compute clinical scores
+        state.clinical_scores = ClinicalScores.compute_all(
+            hr=record.heart_rate,
+            rr=record.resp_rate,
+            spo2=record.spo2,
+            bp_sys=record.bp_systolic,
+            temp=record.temperature,
+        )
+    
+        # Phase 3: Track alarm fatigue comparison
+        if not state.calibrating:
+            self.alarm_tracker.record_comparison(
+                patient_id=record.patient_id,
+                record=record,
+                chronos_severity=state.alert.severity,
+                drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
+            )
+    
+        # ============================================================
+        # STEPS BELOW ARE NEW ù ML AUGMENTATION SIDECAR
+        # ============================================================
+    
+        # Step 4: Feature Engineering
+        try:
+            window = self.entropy_engine.patients.get(pid)
+            window_dict = {
+                'hr': list(window.heart_rate) if window else [],
+                'spo2': list(window.spo2) if window else [],
+                'bp_sys': list(window.bp_systolic) if window else [],
+                'bp_dia': list(window.bp_diastolic) if window else [],
+                'rr': list(window.resp_rate) if window else [],
+                'temp': list(window.temperature) if window else []
+            }
+    
+            # extract basic entropy_state dict from state
+            entropy_state = {
+                'ces_adjusted': state.composite_entropy,
+                'ces_slope_6h': 0.0,
+                'calibrating': state.calibrating,
+                'warmup_complete': not state.calibrating,
+                'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+                'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+                'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+                'sampen_spo2': state.vitals.spo2.sampen_normalized,
+                'window_size': window.current_size if window else 0
+            }
+    
+            # extract basic drug_state dict
+            active_drugs_dicts = []
+            for d in state.active_drugs:
+                active_drugs_dicts.append({
+                    "drug_name": d.drug_name,
+                    "drug_class": d.drug_class,
+                    "dose": d.dose,
+                    "unit": d.unit
+                })
+            drug_state = {
+                'drug_masking': getattr(state.alert, 'drug_masked', False),
+                'active_drugs': active_drugs_dicts
+            }
+    
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+    
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+    
+        # Step 5: NEW ù ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+    
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+    
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+    
+        # Step 6: NEW ù Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+    
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+    
+        # Step 7: NEW ù Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+>           ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+                         ^^^^^^^^^^^^^
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+E       UnboundLocalError: cannot access local variable 'entropy_state' where it is not associated with a value
+
+app\pipeline.py:261: UnboundLocalError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+Feature engineering failed: 'PatientWindow' object has no attribute 'heart_rate'
+_______________________ test_pipeline_drug_integration ________________________
+
+    def test_pipeline_drug_integration():
+        """Pipeline should integrate drugs into processing."""
+        pipeline, _ = _make_test_pipeline(50)
+        base_time = datetime(2024, 1, 15, 10, 0, 0)
+        np.random.seed(42)
+    
+        # Feed 60 points
+        for i in range(60):
+>           pipeline.process_vital(VitalSignRecord(
+                patient_id="P001",
+                timestamp=base_time + timedelta(minutes=i),
+                heart_rate=75 + np.random.randn() * 8,
+                spo2=97 + np.random.randn(),
+                bp_systolic=120 + np.random.randn() * 10,
+                bp_diastolic=80 + np.random.randn() * 6,
+                resp_rate=16 + np.random.randn() * 2,
+                temperature=37.0 + np.random.randn() * 0.2,
+            ))
+
+tests\test_phase3.py:151: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.pipeline.ChronosPipeline object at 0x0000000070B46E40>
+record = VitalSignRecord(patient_id='P001', timestamp=datetime.datetime(2024, 1, 15, 10, 0), heart_rate=78.97371322408986, spo2...stolic=126.47688538100692, bp_diastolic=89.13817913844815, resp_rate=15.531693250553328, temperature=36.95317260861017)
+
+    def process_vital(self, record: VitalSignRecord) -> PatientState:
+        """
+        Process a single vital-sign record through the full pipeline.
+    
+        Steps:
+          1. Entropy Engine computes SampEn, CES, trends, alert
+          2. Drug Filter adjusts CES for active medications
+          3. Evidence Engine provides intervention suggestions
+          4. State is stored in history
+    
+        Returns a complete PatientState.
+        """
+        pid = record.patient_id
+    
+        # Step 1: Entropy Engine
+        state = self.entropy_engine.process_vital(record)
+    
+        if not state.calibrating:
+            # Step 2: Drug Filter
+            active_drugs = self.get_active_drugs(pid, record.timestamp)
+            if active_drugs:
+                state.active_drugs = active_drugs
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                state = self.drug_filter.apply(state, baselines)
+    
+            # Step 3: Evidence Engine (only when alert is active)
+            if state.alert.active:
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                interventions = self.evidence_engine.query(state, baselines)
+                state.interventions = interventions
+    
+                # Track alert
+                self._track_alert(state)
+    
+        # Phase 1: Traditional alarm comparison
+        traditional_alarm = False
+        traditional_alarm_vitals = []
+        _thresholds = {
+            "heart_rate": (50.0, 120.0),
+            "spo2": (90.0, 100.0),
+            "bp_systolic": (90.0, 180.0),
+            "bp_diastolic": (40.0, 110.0),
+            "resp_rate": (8.0, 30.0),
+            "temperature": (35.5, 38.5),
+        }
+        for _vname, (_low, _high) in _thresholds.items():
+            _val = getattr(record, _vname, None)
+            if _val is not None and (_val < _low or _val > _high):
+                traditional_alarm = True
+                traditional_alarm_vitals.append(_vname)
+    
+        state.traditional_alarm = traditional_alarm
+        state.traditional_alarm_vitals = traditional_alarm_vitals
+    
+        # Phase 2: Compute clinical scores
+        state.clinical_scores = ClinicalScores.compute_all(
+            hr=record.heart_rate,
+            rr=record.resp_rate,
+            spo2=record.spo2,
+            bp_sys=record.bp_systolic,
+            temp=record.temperature,
+        )
+    
+        # Phase 3: Track alarm fatigue comparison
+        if not state.calibrating:
+            self.alarm_tracker.record_comparison(
+                patient_id=record.patient_id,
+                record=record,
+                chronos_severity=state.alert.severity,
+                drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
+            )
+    
+        # ============================================================
+        # STEPS BELOW ARE NEW ù ML AUGMENTATION SIDECAR
+        # ============================================================
+    
+        # Step 4: Feature Engineering
+        try:
+            window = self.entropy_engine.patients.get(pid)
+            window_dict = {
+                'hr': list(window.heart_rate) if window else [],
+                'spo2': list(window.spo2) if window else [],
+                'bp_sys': list(window.bp_systolic) if window else [],
+                'bp_dia': list(window.bp_diastolic) if window else [],
+                'rr': list(window.resp_rate) if window else [],
+                'temp': list(window.temperature) if window else []
+            }
+    
+            # extract basic entropy_state dict from state
+            entropy_state = {
+                'ces_adjusted': state.composite_entropy,
+                'ces_slope_6h': 0.0,
+                'calibrating': state.calibrating,
+                'warmup_complete': not state.calibrating,
+                'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+                'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+                'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+                'sampen_spo2': state.vitals.spo2.sampen_normalized,
+                'window_size': window.current_size if window else 0
+            }
+    
+            # extract basic drug_state dict
+            active_drugs_dicts = []
+            for d in state.active_drugs:
+                active_drugs_dicts.append({
+                    "drug_name": d.drug_name,
+                    "drug_class": d.drug_class,
+                    "dose": d.dose,
+                    "unit": d.unit
+                })
+            drug_state = {
+                'drug_masking': getattr(state.alert, 'drug_masked', False),
+                'active_drugs': active_drugs_dicts
+            }
+    
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+    
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+    
+        # Step 5: NEW ù ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+    
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+    
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+    
+        # Step 6: NEW ù Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+    
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+    
+        # Step 7: NEW ù Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+>           ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+                         ^^^^^^^^^^^^^
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+E       UnboundLocalError: cannot access local variable 'entropy_state' where it is not associated with a value
+
+app\pipeline.py:261: UnboundLocalError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+Feature engineering failed: 'PatientWindow' object has no attribute 'heart_rate'
+____________________________ test_pipeline_history ____________________________
+
+    def test_pipeline_history():
+        """Pipeline should store state history."""
+        pipeline, _ = _make_test_pipeline(30)
+        base_time = datetime(2024, 1, 15, 10, 0, 0)
+        np.random.seed(42)
+    
+        for i in range(40):
+>           pipeline.process_vital(VitalSignRecord(
+                patient_id="P001",
+                timestamp=base_time + timedelta(minutes=i),
+                heart_rate=75 + np.random.randn() * 8,
+                spo2=97 + np.random.randn(),
+                bp_systolic=120 + np.random.randn() * 10,
+                bp_diastolic=80 + np.random.randn() * 6,
+                resp_rate=16 + np.random.randn() * 2,
+                temperature=37.0,
+            ))
+
+tests\test_phase3.py:199: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.pipeline.ChronosPipeline object at 0x0000000070EA8A10>
+record = VitalSignRecord(patient_id='P001', timestamp=datetime.datetime(2024, 1, 15, 10, 0), heart_rate=78.97371322408986, spo2...882881, bp_systolic=126.47688538100692, bp_diastolic=89.13817913844815, resp_rate=15.531693250553328, temperature=37.0)
+
+    def process_vital(self, record: VitalSignRecord) -> PatientState:
+        """
+        Process a single vital-sign record through the full pipeline.
+    
+        Steps:
+          1. Entropy Engine computes SampEn, CES, trends, alert
+          2. Drug Filter adjusts CES for active medications
+          3. Evidence Engine provides intervention suggestions
+          4. State is stored in history
+    
+        Returns a complete PatientState.
+        """
+        pid = record.patient_id
+    
+        # Step 1: Entropy Engine
+        state = self.entropy_engine.process_vital(record)
+    
+        if not state.calibrating:
+            # Step 2: Drug Filter
+            active_drugs = self.get_active_drugs(pid, record.timestamp)
+            if active_drugs:
+                state.active_drugs = active_drugs
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                state = self.drug_filter.apply(state, baselines)
+    
+            # Step 3: Evidence Engine (only when alert is active)
+            if state.alert.active:
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                interventions = self.evidence_engine.query(state, baselines)
+                state.interventions = interventions
+    
+                # Track alert
+                self._track_alert(state)
+    
+        # Phase 1: Traditional alarm comparison
+        traditional_alarm = False
+        traditional_alarm_vitals = []
+        _thresholds = {
+            "heart_rate": (50.0, 120.0),
+            "spo2": (90.0, 100.0),
+            "bp_systolic": (90.0, 180.0),
+            "bp_diastolic": (40.0, 110.0),
+            "resp_rate": (8.0, 30.0),
+            "temperature": (35.5, 38.5),
+        }
+        for _vname, (_low, _high) in _thresholds.items():
+            _val = getattr(record, _vname, None)
+            if _val is not None and (_val < _low or _val > _high):
+                traditional_alarm = True
+                traditional_alarm_vitals.append(_vname)
+    
+        state.traditional_alarm = traditional_alarm
+        state.traditional_alarm_vitals = traditional_alarm_vitals
+    
+        # Phase 2: Compute clinical scores
+        state.clinical_scores = ClinicalScores.compute_all(
+            hr=record.heart_rate,
+            rr=record.resp_rate,
+            spo2=record.spo2,
+            bp_sys=record.bp_systolic,
+            temp=record.temperature,
+        )
+    
+        # Phase 3: Track alarm fatigue comparison
+        if not state.calibrating:
+            self.alarm_tracker.record_comparison(
+                patient_id=record.patient_id,
+                record=record,
+                chronos_severity=state.alert.severity,
+                drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
+            )
+    
+        # ============================================================
+        # STEPS BELOW ARE NEW ù ML AUGMENTATION SIDECAR
+        # ============================================================
+    
+        # Step 4: Feature Engineering
+        try:
+            window = self.entropy_engine.patients.get(pid)
+            window_dict = {
+                'hr': list(window.heart_rate) if window else [],
+                'spo2': list(window.spo2) if window else [],
+                'bp_sys': list(window.bp_systolic) if window else [],
+                'bp_dia': list(window.bp_diastolic) if window else [],
+                'rr': list(window.resp_rate) if window else [],
+                'temp': list(window.temperature) if window else []
+            }
+    
+            # extract basic entropy_state dict from state
+            entropy_state = {
+                'ces_adjusted': state.composite_entropy,
+                'ces_slope_6h': 0.0,
+                'calibrating': state.calibrating,
+                'warmup_complete': not state.calibrating,
+                'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+                'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+                'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+                'sampen_spo2': state.vitals.spo2.sampen_normalized,
+                'window_size': window.current_size if window else 0
+            }
+    
+            # extract basic drug_state dict
+            active_drugs_dicts = []
+            for d in state.active_drugs:
+                active_drugs_dicts.append({
+                    "drug_name": d.drug_name,
+                    "drug_class": d.drug_class,
+                    "dose": d.dose,
+                    "unit": d.unit
+                })
+            drug_state = {
+                'drug_masking': getattr(state.alert, 'drug_masked', False),
+                'active_drugs': active_drugs_dicts
+            }
+    
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+    
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+    
+        # Step 5: NEW ù ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+    
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+    
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+    
+        # Step 6: NEW ù Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+    
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+    
+        # Step 7: NEW ù Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+>           ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+                         ^^^^^^^^^^^^^
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+E       UnboundLocalError: cannot access local variable 'entropy_state' where it is not associated with a value
+
+app\pipeline.py:261: UnboundLocalError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+Feature engineering failed: 'PatientWindow' object has no attribute 'heart_rate'
+_________________________ test_pipeline_multi_patient _________________________
+
+    def test_pipeline_multi_patient():
+        """Pipeline should track multiple patients independently."""
+        pipeline, _ = _make_test_pipeline(30)
+        base_time = datetime(2024, 1, 15, 10, 0, 0)
+        np.random.seed(42)
+    
+        for i in range(35):
+            for pid in ["P001", "P002", "P003"]:
+>               pipeline.process_vital(VitalSignRecord(
+                    patient_id=pid,
+                    timestamp=base_time + timedelta(minutes=i),
+                    heart_rate=75 + np.random.randn() * 8,
+                    spo2=97 + np.random.randn(),
+                    bp_systolic=120 + np.random.randn() * 10,
+                    bp_diastolic=80 + np.random.randn() * 6,
+                    resp_rate=16 + np.random.randn() * 2,
+                    temperature=37.0,
+                ))
+
+tests\test_phase3.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.pipeline.ChronosPipeline object at 0x0000000070F62B10>
+record = VitalSignRecord(patient_id='P001', timestamp=datetime.datetime(2024, 1, 15, 10, 0), heart_rate=78.97371322408986, spo2...882881, bp_systolic=126.47688538100692, bp_diastolic=89.13817913844815, resp_rate=15.531693250553328, temperature=37.0)
+
+    def process_vital(self, record: VitalSignRecord) -> PatientState:
+        """
+        Process a single vital-sign record through the full pipeline.
+    
+        Steps:
+          1. Entropy Engine computes SampEn, CES, trends, alert
+          2. Drug Filter adjusts CES for active medications
+          3. Evidence Engine provides intervention suggestions
+          4. State is stored in history
+    
+        Returns a complete PatientState.
+        """
+        pid = record.patient_id
+    
+        # Step 1: Entropy Engine
+        state = self.entropy_engine.process_vital(record)
+    
+        if not state.calibrating:
+            # Step 2: Drug Filter
+            active_drugs = self.get_active_drugs(pid, record.timestamp)
+            if active_drugs:
+                state.active_drugs = active_drugs
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                state = self.drug_filter.apply(state, baselines)
+    
+            # Step 3: Evidence Engine (only when alert is active)
+            if state.alert.active:
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                interventions = self.evidence_engine.query(state, baselines)
+                state.interventions = interventions
+    
+                # Track alert
+                self._track_alert(state)
+    
+        # Phase 1: Traditional alarm comparison
+        traditional_alarm = False
+        traditional_alarm_vitals = []
+        _thresholds = {
+            "heart_rate": (50.0, 120.0),
+            "spo2": (90.0, 100.0),
+            "bp_systolic": (90.0, 180.0),
+            "bp_diastolic": (40.0, 110.0),
+            "resp_rate": (8.0, 30.0),
+            "temperature": (35.5, 38.5),
+        }
+        for _vname, (_low, _high) in _thresholds.items():
+            _val = getattr(record, _vname, None)
+            if _val is not None and (_val < _low or _val > _high):
+                traditional_alarm = True
+                traditional_alarm_vitals.append(_vname)
+    
+        state.traditional_alarm = traditional_alarm
+        state.traditional_alarm_vitals = traditional_alarm_vitals
+    
+        # Phase 2: Compute clinical scores
+        state.clinical_scores = ClinicalScores.compute_all(
+            hr=record.heart_rate,
+            rr=record.resp_rate,
+            spo2=record.spo2,
+            bp_sys=record.bp_systolic,
+            temp=record.temperature,
+        )
+    
+        # Phase 3: Track alarm fatigue comparison
+        if not state.calibrating:
+            self.alarm_tracker.record_comparison(
+                patient_id=record.patient_id,
+                record=record,
+                chronos_severity=state.alert.severity,
+                drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
+            )
+    
+        # ============================================================
+        # STEPS BELOW ARE NEW ù ML AUGMENTATION SIDECAR
+        # ============================================================
+    
+        # Step 4: Feature Engineering
+        try:
+            window = self.entropy_engine.patients.get(pid)
+            window_dict = {
+                'hr': list(window.heart_rate) if window else [],
+                'spo2': list(window.spo2) if window else [],
+                'bp_sys': list(window.bp_systolic) if window else [],
+                'bp_dia': list(window.bp_diastolic) if window else [],
+                'rr': list(window.resp_rate) if window else [],
+                'temp': list(window.temperature) if window else []
+            }
+    
+            # extract basic entropy_state dict from state
+            entropy_state = {
+                'ces_adjusted': state.composite_entropy,
+                'ces_slope_6h': 0.0,
+                'calibrating': state.calibrating,
+                'warmup_complete': not state.calibrating,
+                'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+                'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+                'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+                'sampen_spo2': state.vitals.spo2.sampen_normalized,
+                'window_size': window.current_size if window else 0
+            }
+    
+            # extract basic drug_state dict
+            active_drugs_dicts = []
+            for d in state.active_drugs:
+                active_drugs_dicts.append({
+                    "drug_name": d.drug_name,
+                    "drug_class": d.drug_class,
+                    "dose": d.dose,
+                    "unit": d.unit
+                })
+            drug_state = {
+                'drug_masking': getattr(state.alert, 'drug_masked', False),
+                'active_drugs': active_drugs_dicts
+            }
+    
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+    
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+    
+        # Step 5: NEW ù ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+    
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+    
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+    
+        # Step 6: NEW ù Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+    
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+    
+        # Step 7: NEW ù Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+>           ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+                         ^^^^^^^^^^^^^
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+E       UnboundLocalError: cannot access local variable 'entropy_state' where it is not associated with a value
+
+app\pipeline.py:261: UnboundLocalError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+Feature engineering failed: 'PatientWindow' object has no attribute 'heart_rate'
+__________________________ test_replay_service_tick ___________________________
+
+    def test_replay_service_tick():
+        """Replay service should feed data to pipeline via tick()."""
+        pipeline, config = _make_test_pipeline(50)
+        replay = ReplayService(pipeline, config)
+    
+        # Generate small dataset
+        cases = DataGenerator.generate_demo_dataset(seed=42, num_filler=1, duration_minutes=100)
+        replay.load_cases(cases)
+    
+        # Tick 60 times (past warmup)
+        for _ in range(60):
+>           replay.tick()
+
+tests\test_phase3.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\data\replay.py:113: in tick
+    self._tick_sync()
+app\data\replay.py:95: in _tick_sync
+    self.pipeline.process_vital(record)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.pipeline.ChronosPipeline object at 0x0000000070B0DF70>
+record = VitalSignRecord(patient_id='BED-01', timestamp=datetime.datetime(2026, 3, 19, 21, 29, 57, 216011), heart_rate=82.0, spo2=96.8, bp_systolic=126.5, bp_diastolic=89.1, resp_rate=14.4, temperature=36.9)
+
+    def process_vital(self, record: VitalSignRecord) -> PatientState:
+        """
+        Process a single vital-sign record through the full pipeline.
+    
+        Steps:
+          1. Entropy Engine computes SampEn, CES, trends, alert
+          2. Drug Filter adjusts CES for active medications
+          3. Evidence Engine provides intervention suggestions
+          4. State is stored in history
+    
+        Returns a complete PatientState.
+        """
+        pid = record.patient_id
+    
+        # Step 1: Entropy Engine
+        state = self.entropy_engine.process_vital(record)
+    
+        if not state.calibrating:
+            # Step 2: Drug Filter
+            active_drugs = self.get_active_drugs(pid, record.timestamp)
+            if active_drugs:
+                state.active_drugs = active_drugs
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                state = self.drug_filter.apply(state, baselines)
+    
+            # Step 3: Evidence Engine (only when alert is active)
+            if state.alert.active:
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                interventions = self.evidence_engine.query(state, baselines)
+                state.interventions = interventions
+    
+                # Track alert
+                self._track_alert(state)
+    
+        # Phase 1: Traditional alarm comparison
+        traditional_alarm = False
+        traditional_alarm_vitals = []
+        _thresholds = {
+            "heart_rate": (50.0, 120.0),
+            "spo2": (90.0, 100.0),
+            "bp_systolic": (90.0, 180.0),
+            "bp_diastolic": (40.0, 110.0),
+            "resp_rate": (8.0, 30.0),
+            "temperature": (35.5, 38.5),
+        }
+        for _vname, (_low, _high) in _thresholds.items():
+            _val = getattr(record, _vname, None)
+            if _val is not None and (_val < _low or _val > _high):
+                traditional_alarm = True
+                traditional_alarm_vitals.append(_vname)
+    
+        state.traditional_alarm = traditional_alarm
+        state.traditional_alarm_vitals = traditional_alarm_vitals
+    
+        # Phase 2: Compute clinical scores
+        state.clinical_scores = ClinicalScores.compute_all(
+            hr=record.heart_rate,
+            rr=record.resp_rate,
+            spo2=record.spo2,
+            bp_sys=record.bp_systolic,
+            temp=record.temperature,
+        )
+    
+        # Phase 3: Track alarm fatigue comparison
+        if not state.calibrating:
+            self.alarm_tracker.record_comparison(
+                patient_id=record.patient_id,
+                record=record,
+                chronos_severity=state.alert.severity,
+                drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
+            )
+    
+        # ============================================================
+        # STEPS BELOW ARE NEW ù ML AUGMENTATION SIDECAR
+        # ============================================================
+    
+        # Step 4: Feature Engineering
+        try:
+            window = self.entropy_engine.patients.get(pid)
+            window_dict = {
+                'hr': list(window.heart_rate) if window else [],
+                'spo2': list(window.spo2) if window else [],
+                'bp_sys': list(window.bp_systolic) if window else [],
+                'bp_dia': list(window.bp_diastolic) if window else [],
+                'rr': list(window.resp_rate) if window else [],
+                'temp': list(window.temperature) if window else []
+            }
+    
+            # extract basic entropy_state dict from state
+            entropy_state = {
+                'ces_adjusted': state.composite_entropy,
+                'ces_slope_6h': 0.0,
+                'calibrating': state.calibrating,
+                'warmup_complete': not state.calibrating,
+                'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+                'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+                'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+                'sampen_spo2': state.vitals.spo2.sampen_normalized,
+                'window_size': window.current_size if window else 0
+            }
+    
+            # extract basic drug_state dict
+            active_drugs_dicts = []
+            for d in state.active_drugs:
+                active_drugs_dicts.append({
+                    "drug_name": d.drug_name,
+                    "drug_class": d.drug_class,
+                    "dose": d.dose,
+                    "unit": d.unit
+                })
+            drug_state = {
+                'drug_masking': getattr(state.alert, 'drug_masked', False),
+                'active_drugs': active_drugs_dicts
+            }
+    
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+    
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+    
+        # Step 5: NEW ù ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+    
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+    
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+    
+        # Step 6: NEW ù Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+    
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+    
+        # Step 7: NEW ù Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+>           ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+                         ^^^^^^^^^^^^^
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+E       UnboundLocalError: cannot access local variable 'entropy_state' where it is not associated with a value
+
+app\pipeline.py:261: UnboundLocalError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+[DataGenerator] Generated 4 patient cases (3 hero + 1 filler)
+[Replay] Loaded 4 cases, max duration: 720 min
+Feature engineering failed: 'PatientWindow' object has no attribute 'heart_rate'
+_____________________ test_replay_hero_case_deterioration _____________________
+
+    def test_replay_hero_case_deterioration():
+        """Hero case should show clear deterioration when replayed through pipeline."""
+        config = AppConfig()
+        config.entropy_engine.window_size = 60
+        config.entropy_engine.warmup_points = 60
+        pipeline = ChronosPipeline(config)
+        replay = ReplayService(pipeline, config)
+    
+        # Only load hero case 1
+        rng = np.random.RandomState(42)
+        base_time = datetime(2024, 1, 15, 8, 0, 0)
+        hero1 = DataGenerator.hero_case_1(base_time, rng)
+        replay.load_cases([hero1])
+    
+        # Tick through healthy phase (first 120 minutes, past 60-point warmup)
+        for _ in range(120):
+>           replay.tick()
+
+tests\test_phase3.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+app\data\replay.py:113: in tick
+    self._tick_sync()
+app\data\replay.py:95: in _tick_sync
+    self.pipeline.process_vital(record)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <app.pipeline.ChronosPipeline object at 0x0000000070C6AE10>
+record = VitalSignRecord(patient_id='BED-01', timestamp=datetime.datetime(2024, 1, 15, 8, 0), heart_rate=82.0, spo2=96.8, bp_systolic=126.5, bp_diastolic=89.1, resp_rate=14.4, temperature=36.9)
+
+    def process_vital(self, record: VitalSignRecord) -> PatientState:
+        """
+        Process a single vital-sign record through the full pipeline.
+    
+        Steps:
+          1. Entropy Engine computes SampEn, CES, trends, alert
+          2. Drug Filter adjusts CES for active medications
+          3. Evidence Engine provides intervention suggestions
+          4. State is stored in history
+    
+        Returns a complete PatientState.
+        """
+        pid = record.patient_id
+    
+        # Step 1: Entropy Engine
+        state = self.entropy_engine.process_vital(record)
+    
+        if not state.calibrating:
+            # Step 2: Drug Filter
+            active_drugs = self.get_active_drugs(pid, record.timestamp)
+            if active_drugs:
+                state.active_drugs = active_drugs
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                state = self.drug_filter.apply(state, baselines)
+    
+            # Step 3: Evidence Engine (only when alert is active)
+            if state.alert.active:
+                baselines = self.entropy_engine.get_vital_baselines(pid)
+                interventions = self.evidence_engine.query(state, baselines)
+                state.interventions = interventions
+    
+                # Track alert
+                self._track_alert(state)
+    
+        # Phase 1: Traditional alarm comparison
+        traditional_alarm = False
+        traditional_alarm_vitals = []
+        _thresholds = {
+            "heart_rate": (50.0, 120.0),
+            "spo2": (90.0, 100.0),
+            "bp_systolic": (90.0, 180.0),
+            "bp_diastolic": (40.0, 110.0),
+            "resp_rate": (8.0, 30.0),
+            "temperature": (35.5, 38.5),
+        }
+        for _vname, (_low, _high) in _thresholds.items():
+            _val = getattr(record, _vname, None)
+            if _val is not None and (_val < _low or _val > _high):
+                traditional_alarm = True
+                traditional_alarm_vitals.append(_vname)
+    
+        state.traditional_alarm = traditional_alarm
+        state.traditional_alarm_vitals = traditional_alarm_vitals
+    
+        # Phase 2: Compute clinical scores
+        state.clinical_scores = ClinicalScores.compute_all(
+            hr=record.heart_rate,
+            rr=record.resp_rate,
+            spo2=record.spo2,
+            bp_sys=record.bp_systolic,
+            temp=record.temperature,
+        )
+    
+        # Phase 3: Track alarm fatigue comparison
+        if not state.calibrating:
+            self.alarm_tracker.record_comparison(
+                patient_id=record.patient_id,
+                record=record,
+                chronos_severity=state.alert.severity,
+                drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
+            )
+    
+        # ============================================================
+        # STEPS BELOW ARE NEW ù ML AUGMENTATION SIDECAR
+        # ============================================================
+    
+        # Step 4: Feature Engineering
+        try:
+            window = self.entropy_engine.patients.get(pid)
+            window_dict = {
+                'hr': list(window.heart_rate) if window else [],
+                'spo2': list(window.spo2) if window else [],
+                'bp_sys': list(window.bp_systolic) if window else [],
+                'bp_dia': list(window.bp_diastolic) if window else [],
+                'rr': list(window.resp_rate) if window else [],
+                'temp': list(window.temperature) if window else []
+            }
+    
+            # extract basic entropy_state dict from state
+            entropy_state = {
+                'ces_adjusted': state.composite_entropy,
+                'ces_slope_6h': 0.0,
+                'calibrating': state.calibrating,
+                'warmup_complete': not state.calibrating,
+                'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+                'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+                'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+                'sampen_spo2': state.vitals.spo2.sampen_normalized,
+                'window_size': window.current_size if window else 0
+            }
+    
+            # extract basic drug_state dict
+            active_drugs_dicts = []
+            for d in state.active_drugs:
+                active_drugs_dicts.append({
+                    "drug_name": d.drug_name,
+                    "drug_class": d.drug_class,
+                    "dose": d.dose,
+                    "unit": d.unit
+                })
+            drug_state = {
+                'drug_masking': getattr(state.alert, 'drug_masked', False),
+                'active_drugs': active_drugs_dicts
+            }
+    
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+    
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+    
+        # Step 5: NEW ù ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+    
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+    
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+    
+        # Step 6: NEW ù Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+    
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+    
+        # Step 7: NEW ù Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+>           ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+                         ^^^^^^^^^^^^^
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+E       UnboundLocalError: cannot access local variable 'entropy_state' where it is not associated with a value
+
+app\pipeline.py:261: UnboundLocalError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+[Replay] Loaded 1 cases, max duration: 720 min
+Feature engineering failed: 'PatientWindow' object has no attribute 'heart_rate'
+_____________________________ test_api_endpoints ______________________________
+
+    def test_api_endpoints():
+        """Test all REST API endpoints using FastAPI TestClient."""
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+>       from app.api.routes import router
+E       ImportError: cannot import name 'router' from 'app.api.routes' (C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\api\routes.py)
+
+tests\test_phase3.py:358: ImportError
+_________________________ test_api_alert_acknowledge __________________________
+
+    def test_api_alert_acknowledge():
+        """Test alert acknowledgment workflow."""
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+>       from app.api.routes import router
+E       ImportError: cannot import name 'router' from 'app.api.routes' (C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\api\routes.py)
+
+tests\test_phase3.py:468: ImportError
+_________________________ test_replay_through_manager _________________________
+
+    def test_replay_through_manager():
+        """
+        Simulate what the background replay task does:
+        step through data, process through manager, collect results.
+        """
+        config = AppConfig()
+        config.entropy_engine.window_size = 60
+        config.entropy_engine.warmup_points = 60
+        manager = PatientManager(config)
+    
+        case = DataGenerator.hero_case_1(datetime(2024, 1, 15, 8, 0, 0), np.random.RandomState(42))
+        dataset = [case]
+    
+        replay = ReplayService(manager, config)
+        replay.load_cases(dataset)
+    
+        states_collected = []
+        drugs_given = set()
+    
+        while replay.is_running:
+            replay.tick()
+            # The tick method processes all patients internally through the manager
+    
+        # Check that we processed all records
+        assert not replay.is_running
+>       assert replay.current_minute >= 720  # Case duration is 720 minutes
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 >= 720
+E        +  where 0 = <app.data.replay.ReplayService object at 0x000000007105B170>.current_minute
+
+tests\test_phase4.py:88: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] All 3 horizon models loaded successfully.
+[SyndromeClassifier] Syndrome classifier loaded successfully.
+[ML] Predictor=READY  Classifier=READY
+[Replay] Loaded 1 cases, max duration: 720 min
+____________________ test_multi_patient_replay_with_drugs _____________________
+
+    def test_multi_patient_replay_with_drugs():
+        """Full 8-patient dataset through the pipeline with drug tracking."""
+        config = AppConfig()
+        config.entropy_engine.window_size = 60
+        config.entropy_engine.warmup_points = 60
+        manager = PatientManager(config)
+    
+        dataset = DataGenerator.generate_demo_dataset()
+        replay = ReplayService(manager, config)
+        replay.load_cases(dataset)
+    
+        drugs_given = set()
+        tick = 0
+        max_ticks = 100  # Only process 100 ticks for speed
+    
+        while replay.is_running and tick < max_ticks:
+            replay.tick()
+            tick += 1
+    
+        summaries = manager.get_all_summaries()
+        print(f"  Processed {tick} ticks across {len(summaries)} patients")
+        for s in summaries:
+            print(f"    {s.patient_id}: CES={s.composite_entropy:.4f}, severity={s.alert_severity}")
+    
+>       assert len(summaries) == 8, f"Expected 8 patients, got {len(summaries)}"
+E       AssertionError: Expected 8 patients, got 0
+E       assert 0 == 8
+E        +  where 0 = len([])
+
+tests\test_phase4.py:186: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] All 3 horizon models loaded successfully.
+[SyndromeClassifier] Syndrome classifier loaded successfully.
+[ML] Predictor=READY  Classifier=READY
+[DataGenerator] Generated 8 patient cases (3 hero + 5 filler)
+[Replay] Loaded 8 cases, max duration: 720 min
+  Processed 0 ticks across 0 patients
+============================== warnings summary ===============================
+tests/test_phase3.py::test_demo_dataset_generation
+tests/test_phase3.py::test_data_determinism
+tests/test_phase3.py::test_data_determinism
+tests/test_phase3.py::test_replay_service_tick
+tests/test_phase4.py::test_multi_patient_replay_with_drugs
+  C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\data\generator.py:300: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    base_time = datetime.utcnow()
+
+tests/test_phase3.py::test_pipeline_process_vital
+tests/test_phase3.py::test_pipeline_drug_integration
+tests/test_phase3.py::test_pipeline_history
+tests/test_phase3.py::test_pipeline_multi_patient
+tests/test_phase3.py::test_pipeline_system_health
+tests/test_phase3.py::test_replay_service_tick
+tests/test_phase3.py::test_replay_hero_case_deterioration
+  C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\pipeline.py:51: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    self._start_time = datetime.utcnow()
+
+tests/test_phase3.py::test_pipeline_system_health
+  C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\pipeline.py:437: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "uptime_seconds": int((datetime.utcnow() - self._start_time).total_seconds()),
+
+tests/test_phase4.py::test_broadcast_no_clients
+  C:\Users\ayush\Downloads\project\project-chronos\tests\test_phase4.py:55: DeprecationWarning: There is no current event loop
+    asyncio.get_event_loop().run_until_complete(_run())
+
+tests/test_phase4.py::test_replay_through_manager
+tests/test_phase4.py::test_fast_buffer_then_compute
+tests/test_phase4.py::test_multi_patient_replay_with_drugs
+tests/test_phase4.py::test_replay_reset_and_loop
+tests/test_phase4.py::test_alert_creation_during_replay
+tests/test_phase4.py::test_hero_case_entropy_story
+tests/test_phase4.py::test_performance_single_patient
+  C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\core\manager.py:173: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    self.start_time = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_phase3.py::test_pipeline_process_vital - UnboundLocalError:...
+FAILED tests/test_phase3.py::test_pipeline_drug_integration - UnboundLocalErr...
+FAILED tests/test_phase3.py::test_pipeline_history - UnboundLocalError: canno...
+FAILED tests/test_phase3.py::test_pipeline_multi_patient - UnboundLocalError:...
+FAILED tests/test_phase3.py::test_replay_service_tick - UnboundLocalError: ca...
+FAILED tests/test_phase3.py::test_replay_hero_case_deterioration - UnboundLoc...
+FAILED tests/test_phase3.py::test_api_endpoints - ImportError: cannot import ...
+FAILED tests/test_phase3.py::test_api_alert_acknowledge - ImportError: cannot...
+FAILED tests/test_phase4.py::test_replay_through_manager - assert 0 >= 720
+FAILED tests/test_phase4.py::test_multi_patient_replay_with_drugs - Assertion...
+================= 10 failed, 49 passed, 21 warnings in 32.45s =================

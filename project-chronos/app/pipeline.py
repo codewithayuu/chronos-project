@@ -1,7 +1,6 @@
-
 from collections import deque
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Optional, Dict, List, Any
 from copy import deepcopy
 import threading
 
@@ -21,6 +20,20 @@ from .drugs.filter import DrugFilter
 from .evidence.engine import EvidenceEngine
 from .analytics.clinical_scores import ClinicalScores
 from .analytics.alarm_fatigue import AlarmFatigueTracker
+
+try:
+    from .data.feature_engineer import FeatureEngineer
+    from .ml.predictor import DeteriorationPredictor
+    from .ml.classifier import SyndromeClassifier
+    from .core.fusion import DecisionFusion
+    from .core.detectors import DetectorBank
+except ImportError:
+    from ._stubs import (StubFeatureEngineer as FeatureEngineer,
+                         StubDeteriorationPredictor as DeteriorationPredictor,
+                         StubSyndromeClassifier as SyndromeClassifier,
+                         StubDecisionFusion as DecisionFusion,
+                         StubDetectorBank as DetectorBank)
+    print("WARNING: Using stub implementations. ML features disabled.")
 
 class ChronosPipeline:
     """
@@ -59,8 +72,22 @@ class ChronosPipeline:
         
         # Phase 3: Alarm fatigue tracking
         self.alarm_tracker = AlarmFatigueTracker()
+        
+        # Per-patient ML state storage
+        self._ml_states: Dict[str, Dict] = {}
 
-        print("[Pipeline] Initialized — Entropy Engine + Drug Filter + Evidence Engine ready")
+        # NEW: ML augmentation sidecar
+        self.feature_engineer = FeatureEngineer()
+        models_dir = getattr(config, 'ml_models', {}).get('models_dir', '/data/models') if hasattr(config, 'ml_models') else '/data/models'
+        self.deterioration_predictor = DeteriorationPredictor(models_dir=models_dir)
+        self.syndrome_classifier = SyndromeClassifier(models_dir=models_dir)
+        self.decision_fusion = DecisionFusion()
+        self.detectors = DetectorBank()
+        
+        print(f"ML Status: Predictor={'READY' if getattr(self.deterioration_predictor, 'available', False) else 'UNAVAILABLE'}")
+        print(f"ML Status: Classifier={'READY' if getattr(self.syndrome_classifier, 'available', False) else 'UNAVAILABLE'}")
+
+        print("[Pipeline] Initialized — Entropy Engine + Drug Filter + Evidence Engine + ML ready")
 
     # ──────────────────────────────────────────────
     # Main processing
@@ -138,7 +165,130 @@ class ChronosPipeline:
                 drug_masked=state.alert.drug_masked if hasattr(state.alert, 'drug_masked') else False,
             )
 
-        # Step 4: Store state
+        # ============================================================
+        # STEPS BELOW ARE NEW — ML AUGMENTATION SIDECAR
+        # ============================================================
+        
+        window = self.entropy_engine.patients.get(pid)
+        
+        # extract basic entropy_state dict from state
+        entropy_state = {
+            'ces_adjusted': state.composite_entropy,
+            'ces_slope_6h': 0.0, 
+            'calibrating': state.calibrating,
+            'warmup_complete': not state.calibrating,
+            'sampen_hr': state.vitals.heart_rate.sampen_normalized,
+            'sampen_bp_sys': state.vitals.bp_systolic.sampen_normalized,
+            'sampen_rr': state.vitals.resp_rate.sampen_normalized,
+            'sampen_spo2': state.vitals.spo2.sampen_normalized,
+            'window_size': window.current_size if window else 0
+        }
+        
+        # extract basic drug_state dict
+        active_drugs_dicts = []
+        for d in state.active_drugs:
+            active_drugs_dicts.append({
+                "drug_name": d.drug_name,
+                "drug_class": d.drug_class,
+                "dose": d.dose,
+                "unit": d.unit
+            })
+        drug_state = {
+            'drug_masking': getattr(state.alert, 'drug_masked', False),
+            'active_drugs': active_drugs_dicts
+        }
+
+        # Step 4: Feature Engineering
+        try:
+            window_dict = {
+                'hr': list(window.buffers['heart_rate']) if window else [],
+                'spo2': list(window.buffers['spo2']) if window else [],
+                'bp_sys': list(window.buffers['bp_systolic']) if window else [],
+                'bp_dia': list(window.buffers['bp_diastolic']) if window else [],
+                'rr': list(window.buffers['resp_rate']) if window else [],
+                'temp': list(window.buffers['temperature']) if window else []
+            }
+            
+            # extract basic demographics
+            demographics = {'age': 60, 'sex': 'unknown', 'weight_kg': 70.0}
+
+            features = self.feature_engineer.compute_features(
+                vitals_window=window_dict,
+                entropy_state=entropy_state,
+                drug_state=drug_state,
+                demographics=demographics
+            )
+        except Exception as e:
+            print(f"Feature engineering failed: {e}")
+            features = None
+
+        # Step 5: NEW — ML Predictions
+        ml_predictions = {'deterioration': None, 'syndrome': None, 'warmup_mode': True}
+
+        if features is not None:
+            warmup_complete = entropy_state.get('warmup_complete', False)
+            
+            if warmup_complete:
+                det_result = self.deterioration_predictor.predict(features)
+                syn_result = self.syndrome_classifier.predict(features)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': syn_result,
+                    'warmup_mode': False
+                }
+            else:
+                features_imputed = self.feature_engineer.impute_warmup(features)
+                det_result = self.deterioration_predictor.predict(features_imputed)
+                ml_predictions = {
+                    'deterioration': det_result,
+                    'syndrome': None,
+                    'warmup_mode': True
+                }
+
+        # Step 6: NEW — Enhanced Evidence
+        syndrome_hint = None
+        if ml_predictions.get('syndrome') and not ml_predictions['syndrome'].get('inconclusive', True):
+            syndrome_hint = ml_predictions['syndrome'].get('primary_syndrome')
+
+        enhanced_evidence = self.evidence_engine.find_similar_cases(
+            feature_vector=features,
+            syndrome=syndrome_hint
+        )
+
+        # Step 7: NEW — Decision Fusion
+        det = ml_predictions.get('deterioration') or {}
+        fusion_result = self.decision_fusion.fuse(
+            ces_adjusted=state.composite_entropy,
+            ces_slope_6h=entropy_state.get('ces_slope_6h', 0.0),
+            ml_risk_1h=det.get('risk_1h'),
+            ml_risk_4h=det.get('risk_4h'),
+            ml_risk_8h=det.get('risk_8h'),
+            drug_masking=drug_state.get('drug_masking', False),
+            news2_score=state.clinical_scores.get('news2', {}).get('score', 0) if state.clinical_scores else 0
+        )
+
+        # Step 8: NEW — Detectors
+        vitals_dict = record.model_dump() if hasattr(record, 'model_dump') else {}
+        detector_results = self.detectors.run_all(
+            entropy_state=entropy_state,
+            drug_state=drug_state,
+            vitals=vitals_dict,
+            ml_predictions=ml_predictions,
+            fusion=fusion_result
+        )
+
+        # Store in ml_state
+        self._ml_states[pid] = {
+            'ml_predictions': ml_predictions,
+            'fusion': fusion_result,
+            'detectors': detector_results,
+            'recommendations': {
+                'interventions': enhanced_evidence.get('interventions', []),
+                'suggested_tests': enhanced_evidence.get('suggested_tests', [])
+            }
+        }
+
+        # Step 10: Store state
         self._latest_states[pid] = state
         self._store_history(pid, state)
 
@@ -171,6 +321,10 @@ class ChronosPipeline:
     def get_patient_state(self, patient_id: str) -> Optional[PatientState]:
         """Get the latest state for a patient."""
         return self._latest_states.get(patient_id)
+
+    def get_ml_state(self, patient_id: str) -> Dict[str, Any]:
+        """Get the latest ML state for a patient."""
+        return self._ml_states.get(patient_id, {})
 
     def get_all_patient_ids(self) -> List[str]:
         """Get all tracked patient IDs."""

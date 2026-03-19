@@ -1,0 +1,20 @@
+{
+  "val_accuracy": 0.9949,
+  "test_accuracy": 0.9951,
+  "temperature": 1.1468,
+  "n_classes": 5,
+  "syndrome_names": [
+    "sepsis_like",
+    "respiratory_failure",
+    "hemodynamic_instability",
+    "cardiac_instability",
+    "stable"
+  ],
+  "train_distribution": {
+    "sepsis_like": 1242,
+    "respiratory_failure": 1288,
+    "hemodynamic_instability": 1264,
+    "cardiac_instability": 1840,
+    "stable": 23361
+  }
+}

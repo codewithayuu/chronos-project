@@ -1,0 +1,32 @@
+{
+  "1h": {
+    "horizon": "1h",
+    "auc_roc": 0.9685,
+    "avg_precision": 0.9335,
+    "n_train": 28995,
+    "n_val": 6264,
+    "pos_rate_train": 0.2256,
+    "pos_rate_val": 0.2348,
+    "test_auc_roc": 0.9805
+  },
+  "4h": {
+    "horizon": "4h",
+    "auc_roc": 0.9206,
+    "avg_precision": 0.9057,
+    "n_train": 28995,
+    "n_val": 6264,
+    "pos_rate_train": 0.3489,
+    "pos_rate_val": 0.3574,
+    "test_auc_roc": 0.9564
+  },
+  "8h": {
+    "horizon": "8h",
+    "auc_roc": 0.9258,
+    "avg_precision": 0.9265,
+    "n_train": 28995,
+    "n_val": 6264,
+    "pos_rate_train": 0.4227,
+    "pos_rate_val": 0.4397,
+    "test_auc_roc": 0.9501
+  }
+}

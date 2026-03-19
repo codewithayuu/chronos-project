@@ -685,3 +685,5 @@ def create_router() -> APIRouter:
         }
 
     return router
+
+router = create_router()

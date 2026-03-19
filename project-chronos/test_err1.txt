@@ -1,0 +1,55 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\ayush\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\ayush\Downloads\project\project-chronos
+plugins: anyio-4.12.1, langsmith-0.7.20
+collecting ... collected 1 item
+
+tests/test_phase3.py::test_api_endpoints FAILED                          [100%]
+
+================================== FAILURES ===================================
+_____________________________ test_api_endpoints ______________________________
+
+    def test_api_endpoints():
+        """Test all REST API endpoints using FastAPI TestClient."""
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from app.api.routes import router
+    
+        # Create test app with pipeline
+        config = AppConfig()
+        config.entropy_engine.window_size = 30
+        config.entropy_engine.warmup_points = 30
+        pipeline = ChronosPipeline(config)
+    
+        app = FastAPI()
+        app.state.pipeline = pipeline
+        app.include_router(router)
+    
+        client = TestClient(app)
+    
+        # \u2500\u2500 1. Health check \u2500\u2500
+        resp = client.get("/api/v1/system/health")
+>       assert resp.status_code == 200
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests\test_phase3.py:374: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[DrugDB] Loaded 15 drugs across 7 classes.
+[EvidenceEngine] Generating 500 synthetic cases...
+[EvidenceEngine] KD-Tree built with 500 cases, 20 features.
+[DeteriorationPredictor] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\deterioration_1h.joblib'. Predictor unavailable.
+[SyndromeClassifier] WARNING: Model file not found: [Errno 2] No such file or directory: '\\data\\models\\syndrome_classifier.joblib'. Classifier unavailable.
+ML Status: Predictor=UNAVAILABLE
+ML Status: Classifier=UNAVAILABLE
+[Pipeline] Initialized ù Entropy Engine + Drug Filter + Evidence Engine + ML ready
+============================== warnings summary ===============================
+tests/test_phase3.py::test_api_endpoints
+  C:\Users\ayush\Downloads\project\project-chronos\tests\..\app\pipeline.py:51: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    self._start_time = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_phase3.py::test_api_endpoints - assert 404 == 200
+======================== 1 failed, 1 warning in 2.09s =========================

@@ -1,0 +1,6 @@
+{
+  "n_cases": 28995,
+  "n_features": 45,
+  "k_neighbors": 15,
+  "tree_type": "KDTree"
+}

@@ -357,15 +357,18 @@ def test_api_endpoints():
     from fastapi.testclient import TestClient
     from app.api.routes import router
 
-    # Create test app with pipeline
+    from app.core.manager import PatientManager
+    from app.api.websocket import ConnectionManager
+    # Create test app with manager
     config = AppConfig()
     config.entropy_engine.window_size = 30
     config.entropy_engine.warmup_points = 30
-    pipeline = ChronosPipeline(config)
+    manager = PatientManager(config)
 
     app = FastAPI()
-    app.state.pipeline = pipeline
-    app.include_router(router)
+    app.state.manager = manager
+    app.state.ws_manager = ConnectionManager()
+    app.include_router(router, prefix="/api/v1")
 
     client = TestClient(app)
 
@@ -467,14 +470,18 @@ def test_api_alert_acknowledge():
     from fastapi.testclient import TestClient
     from app.api.routes import router
 
+    from app.core.manager import PatientManager
+    from app.api.websocket import ConnectionManager
+
     config = AppConfig()
     config.entropy_engine.window_size = 30
     config.entropy_engine.warmup_points = 30
-    pipeline = ChronosPipeline(config)
+    manager = PatientManager(config)
 
     app = FastAPI()
-    app.state.pipeline = pipeline
-    app.include_router(router)
+    app.state.manager = manager
+    app.state.ws_manager = ConnectionManager()
+    app.include_router(router, prefix="/api/v1")
 
     client = TestClient(app)
 

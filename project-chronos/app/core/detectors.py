@@ -122,7 +122,8 @@ class DetectorBank:
         """
         Fires when CES drops below severity thresholds.
         """
-        ces = entropy_state.get("ces_adjusted", 1.0)
+        ces = entropy_state.get("ces_adjusted")
+        if ces is None: ces = 1.0
         warmup = entropy_state.get("warmup_complete", False)
 
         if not warmup:
@@ -167,7 +168,8 @@ class DetectorBank:
         Fires when entropy is declining but vital VALUES remain in normal range.
         This is the key 'early warning' detector — the entire premise of Chronos.
         """
-        ces_slope = entropy_state.get("ces_slope_6h", 0.0)
+        ces_slope = entropy_state.get("ces_slope_6h")
+        if ces_slope is None: ces_slope = 0.0
         warmup = entropy_state.get("warmup_complete", False)
 
         if not warmup or ces_slope >= -0.001:
@@ -211,8 +213,10 @@ class DetectorBank:
         active_drugs = drug_state.get("active_drugs", [])
         drug_names = [d.get("drug_name", "Unknown") for d in active_drugs]
 
-        ces = entropy_state.get("ces_adjusted", 1.0)
-        sampen_bp = entropy_state.get("sampen_bp_sys", 1.0)
+        ces = entropy_state.get("ces_adjusted")
+        if ces is None: ces = 1.0
+        sampen_bp = entropy_state.get("sampen_bp_sys")
+        if sampen_bp is None: sampen_bp = 1.0
 
         # Check for concerning pattern: drugs active + entropy declining
         factors = [f"drug: {name}" for name in drug_names]
@@ -253,8 +257,10 @@ class DetectorBank:
         - SpO2 entropy dropping
         - RR values trending up (compensatory tachypnea)
         """
-        sampen_rr = entropy_state.get("sampen_rr", 1.0)
-        sampen_spo2 = entropy_state.get("sampen_spo2", 1.0)
+        sampen_rr = entropy_state.get("sampen_rr")
+        if sampen_rr is None: sampen_rr = 1.0
+        sampen_spo2 = entropy_state.get("sampen_spo2")
+        if sampen_spo2 is None: sampen_spo2 = 1.0
         warmup = entropy_state.get("warmup_complete", False)
 
         if not warmup:
@@ -323,8 +329,10 @@ class DetectorBank:
         - Shock index elevated (HR/BP_sys > 0.7)
         - HR entropy declining
         """
-        sampen_bp = entropy_state.get("sampen_bp_sys", 1.0)
-        sampen_hr = entropy_state.get("sampen_hr", 1.0)
+        sampen_bp = entropy_state.get("sampen_bp_sys")
+        if sampen_bp is None: sampen_bp = 1.0
+        sampen_hr = entropy_state.get("sampen_hr")
+        if sampen_hr is None: sampen_hr = 1.0
         warmup = entropy_state.get("warmup_complete", False)
 
         if not warmup:
@@ -481,8 +489,10 @@ class DetectorBank:
         - ML risk declining
         - Previously elevated severity now decreasing
         """
-        ces_slope = entropy_state.get("ces_slope_6h", 0.0)
-        ces = entropy_state.get("ces_adjusted", 1.0)
+        ces_slope = entropy_state.get("ces_slope_6h")
+        if ces_slope is None: ces_slope = 0.0
+        ces = entropy_state.get("ces_adjusted")
+        if ces is None: ces = 1.0
         warmup = entropy_state.get("warmup_complete", False)
 
         if not warmup:

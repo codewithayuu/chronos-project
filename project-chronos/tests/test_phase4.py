@@ -79,7 +79,7 @@ def test_replay_through_manager():
     states_collected = []
     drugs_given = set()
 
-    while replay.is_running:
+    while replay.current_minute < replay._max_minutes:
         replay.tick()
         # The tick method processes all patients internally through the manager
 
@@ -174,7 +174,7 @@ def test_multi_patient_replay_with_drugs():
     tick = 0
     max_ticks = 100  # Only process 100 ticks for speed
 
-    while replay.is_running and tick < max_ticks:
+    while replay.current_minute < replay._max_minutes and tick < max_ticks:
         replay.tick()
         tick += 1
 
@@ -204,8 +204,8 @@ def test_replay_reset_and_loop():
     replay.load_cases(dataset)
 
     # Exhaust all records
-    while replay.is_running:
-        replay._tick_sync()
+    while replay.current_minute < replay._max_minutes:
+        replay.tick()
         if replay._current_minute >= replay._max_minutes:
             replay._running = False
     assert not replay.is_running
@@ -216,7 +216,7 @@ def test_replay_reset_and_loop():
     assert replay.is_running
     assert replay.current_minute == 0
 
-    batch = replay._tick_sync()
+    batch = replay.tick()
     print("  ✅ PASSED — Replay reset works for looping")
 
 
@@ -259,7 +259,7 @@ def test_alert_creation_during_replay():
     replay = ReplayService(manager, config)
     replay.load_cases(dataset)
 
-    while replay.is_running:
+    while replay.current_minute < replay._max_minutes:
         replay.tick()
 
     alerts = manager.get_all_alerts()
