@@ -1,0 +1,75 @@
+:root {
+  /* Backgrounds */
+  --bg-primary: #0a0a1a;
+  --bg-secondary: #111127;
+  --bg-card: #14142b;
+  --bg-card-hover: #1a1a3e;
+  --bg-surface: #1e1e3a;
+
+  /* Severity */
+  --color-none: #00e676;
+  --color-none-bg: #0a1a14;
+  --color-none-border: #0d3320;
+  --color-watch: #ffd740;
+  --color-watch-bg: #1a1a0a;
+  --color-watch-border: #3d3500;
+  --color-warning: #ff6e40;
+  --color-warning-bg: #1f120a;
+  --color-warning-border: #4d2000;
+  --color-critical: #ff1744;
+  --color-critical-bg: #1f0a0e;
+  --color-critical-border: #4d0015;
+
+  /* Text */
+  --text-primary: #e8e8f0;
+  --text-secondary: #6b6b8d;
+  --text-bright: #ffffff;
+  --text-dim: #4a4a6a;
+
+  /* Charts */
+  --chart-line: #4fc3f7;
+  --chart-entropy: #ba68c8;
+  --chart-threshold: #333355;
+  --chart-drug-marker: #ffd740;
+
+  /* Intervention success */
+  --success-high: #00e676;
+  --success-mid: #ffd740;
+  --success-low: #ff6e40;
+
+  /* Accents */
+  --accent-blue: #2979ff;
+  --accent-teal: #00bfa5;
+
+  /* Surfaces */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(20, 20, 43, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Shadows */
+  --shadow-card: 0 4px 24px -4px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 8px 32px -4px rgba(0, 0, 0, 0.5);
+  --shadow-glow-none: 0 0 20px -4px rgba(0, 230, 118, 0.15);
+  --shadow-glow-watch: 0 0 20px -4px rgba(255, 215, 64, 0.2);
+  --shadow-glow-warning: 0 0 24px -4px rgba(255, 110, 64, 0.25);
+  --shadow-glow-critical: 0 0 28px -4px rgba(255, 23, 68, 0.35);
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 350ms;
+  --duration-slow: 600ms;
+}

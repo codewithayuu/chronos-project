@@ -1,0 +1,38 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  position: relative;
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px 32px 48px;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-main.detail-active {
+  max-width: 1800px;
+  padding: 20px 28px 48px;
+}
+
+/* Reconnecting banner */
+.reconnecting-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: linear-gradient(90deg, #ff6e40, #ffd740);
+  color: #1a1a0a;
+  text-align: center;
+  padding: 6px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: fade-in-up 300ms var(--ease-out-expo) both;
+}
