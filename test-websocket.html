@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="messages"></div>
+    <script>
+        const ws = new WebSocket('ws://localhost:8000/ws');
+        const messages = document.getElementById('messages');
+        
+        ws.onopen = function(event) {
+            console.log('Connected to WebSocket');
+            messages.innerHTML += '<p>Connected to WebSocket</p>';
+        };
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            messages.innerHTML += '<p>' + JSON.stringify(data) + '</p>';
+        };
+        
+        ws.onerror = function(error) {
+            console.log('WebSocket Error:', error);
+            messages.innerHTML += '<p>Error: ' + error + '</p>';
+        };
+        
+        ws.onclose = function(event) {
+            console.log('WebSocket connection closed');
+            messages.innerHTML += '<p>Connection closed</p>';
+        };
+    </script>
+</body>
+</html>
