@@ -58,9 +58,13 @@ async def replay_loop(app: FastAPI):
         for case in replay._cases:
             state = manager.get_patient_state(case.patient_id)
             if state:
-                await ws.broadcast_patient_update(
-                    state.model_dump(mode="json")
-                )
+                sd = state.model_dump(mode="json")
+                # Inject ML fields into initial broadcast
+                sd["ml_predictions"] = getattr(state, '_ml_predictions', None)
+                sd["fusion"] = getattr(state, '_fusion', None)
+                sd["detectors"] = getattr(state, '_detectors', [])
+                sd["recommendations"] = getattr(state, '_recommendations', {"interventions": [], "suggested_tests": []})
+                await ws.broadcast_patient_update(sd)
         print(f"[Replay] Warmup complete. All patients have entropy data.")
     except Exception as e:
         print(f"[Replay] Warmup error (non-fatal): {e}")
@@ -100,6 +104,11 @@ async def replay_loop(app: FastAPI):
                 if state.calibrating:
                     continue
                 state_dict = state.model_dump(mode="json")
+                # Inject ML augmentation fields
+                state_dict["ml_predictions"] = getattr(state, '_ml_predictions', None)
+                state_dict["fusion"] = getattr(state, '_fusion', None)
+                state_dict["detectors"] = getattr(state, '_detectors', [])
+                state_dict["recommendations"] = getattr(state, '_recommendations', {"interventions": [], "suggested_tests": []})
                 # Ensure vital values are present
                 vitals = state_dict.get("vitals", {})
                 has_data = any(
@@ -242,12 +251,18 @@ def create_app() -> FastAPI:
         """
         await ws_manager.connect(websocket)
         try:
-            # Send full patient states (not just summaries) for immediate display
+            # Send full patient states with ML augmentation
             full_states = []
             for pid in manager.latest_states:
                 state = manager.get_patient_state(pid)
                 if state and not state.calibrating:
-                    full_states.append(state.model_dump(mode="json"))
+                    sd = state.model_dump(mode="json")
+                    # Inject ML augmentation fields
+                    sd["ml_predictions"] = getattr(state, '_ml_predictions', None)
+                    sd["fusion"] = getattr(state, '_fusion', None)
+                    sd["detectors"] = getattr(state, '_detectors', [])
+                    sd["recommendations"] = getattr(state, '_recommendations', {"interventions": [], "suggested_tests": []})
+                    full_states.append(sd)
             
             if full_states:
                 # Send as individual patient_update events so frontend processes them correctly

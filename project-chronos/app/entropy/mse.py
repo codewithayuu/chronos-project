@@ -1,10 +1,3 @@
-"""
-Multi-Scale Entropy (MSE) computation.
-
-MSE applies Sample Entropy at multiple time scales via coarse-graining.
-A healthy signal maintains high entropy across ALL scales.
-A deteriorating signal loses complexity at higher scales first.
-"""
 
 import numpy as np
 from typing import List, Optional

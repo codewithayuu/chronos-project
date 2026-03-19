@@ -1,14 +1,3 @@
-"""
-Sample Entropy (SampEn) computation.
-
-SampEn measures the complexity/irregularity of a time series.
-  - Higher SampEn → more complex, unpredictable → HEALTHIER
-  - Lower SampEn  → more regular, predictable  → CONCERNING
-
-Two implementations:
-  1. Numba JIT-compiled (if numba is installed) — ~5ms for N=300
-  2. NumPy vectorized fallback — ~50-100ms for N=300
-"""
 
 import numpy as np
 

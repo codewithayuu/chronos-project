@@ -153,3 +153,42 @@ class DrugDatabaseEntry(BaseModel):
     onset_minutes: int
     duration_minutes: int
     entropy_impact: str              # "reduces" | "increases" | "none"
+
+
+# ──────────────────────────────────────────────
+# NEW ML Models (added for ML augmentation sidecar)
+# ──────────────────────────────────────────────
+
+class MLPredictions(BaseModel):
+    """ML prediction outputs for a patient."""
+    deterioration_risk: Optional[Dict[str, Any]] = None
+    syndrome: Optional[Dict[str, Any]] = None
+    warmup_mode: bool = True
+
+
+class FusionResult(BaseModel):
+    """Decision fusion output combining entropy + ML + clinical scores."""
+    final_risk_score: int = 0
+    final_severity: str = "NONE"
+    time_to_event_estimate: str = "Unknown"
+    component_risks: Dict[str, Any] = {}
+    ml_available: bool = False
+    override_applied: Optional[str] = None
+    disagreement: Optional[Dict[str, Any]] = None
+
+
+class DetectorResult(BaseModel):
+    """Output from a single detector in the DetectorBank."""
+    detector_name: str
+    active: bool = False
+    severity: str = "NONE"
+    message: str = ""
+    contributing_factors: List[str] = Field(default_factory=list)
+    recommended_action: str = ""
+
+
+class Recommendations(BaseModel):
+    """Evidence-based intervention recommendations and suggested tests."""
+    interventions: List[Dict[str, Any]] = Field(default_factory=list)
+    suggested_tests: List[Dict[str, Any]] = Field(default_factory=list)
+

@@ -257,6 +257,135 @@ class EvidenceEngine:
 
         return interventions
 
+    # ------------------------------------------
+    # Enhanced Evidence (ML augmentation sidecar)
+    # ------------------------------------------
+
+    SYNDROME_TESTS = {
+        "Sepsis-like": [
+            {"test": "Blood cultures", "reason": "Identify infectious source"},
+            {"test": "Serum lactate", "reason": "Assess tissue perfusion"},
+            {"test": "Procalcitonin", "reason": "Bacterial infection marker"},
+            {"test": "CBC with differential", "reason": "White cell response"},
+        ],
+        "Respiratory Failure": [
+            {"test": "Arterial blood gas", "reason": "Assess oxygenation and ventilation"},
+            {"test": "Chest X-ray", "reason": "Evaluate lung fields"},
+            {"test": "D-dimer", "reason": "Rule out pulmonary embolism"},
+        ],
+        "Hemodynamic Instability": [
+            {"test": "Echocardiogram", "reason": "Assess cardiac output"},
+            {"test": "Serum lactate", "reason": "Tissue perfusion marker"},
+            {"test": "CVP assessment", "reason": "Volume status evaluation"},
+        ],
+        "Cardiac Instability": [
+            {"test": "12-lead ECG", "reason": "Rhythm and ischemia assessment"},
+            {"test": "Troponin", "reason": "Myocardial injury marker"},
+            {"test": "Echocardiogram", "reason": "Wall motion and function"},
+        ],
+    }
+
+    def find_similar_cases(
+        self,
+        feature_vector=None,
+        syndrome: Optional[str] = None,
+    ) -> dict:
+        """
+        Enhanced evidence query: accepts 45-feature vector + syndrome hint.
+
+        Returns dict with 'interventions' and 'suggested_tests'.
+        Falls back to empty lists if inputs are unavailable.
+        """
+        # Get KNN-based interventions using existing tree
+        interventions = []
+        if self._built and feature_vector is not None:
+            try:
+                # Build a minimal query vector from the 45-feature vector
+                # Map the 45 features down to the existing 20-feature space
+                query_20 = self._map_45_to_20(feature_vector)
+                standardized = (query_20 - self.scaler_mean) / self.scaler_std
+
+                k = min(self.config.k_neighbors, len(self.cases))
+                distances, indices = self.tree.query(standardized, k=k)
+
+                if np.isscalar(distances):
+                    distances = np.array([distances])
+                    indices = np.array([indices])
+
+                valid_mask = distances <= self.config.min_distance_threshold
+                valid_indices = indices[valid_mask]
+
+                if len(valid_indices) > 0:
+                    neighbor_cases = [self.cases[i] for i in valid_indices]
+                    interventions = self._rank_interventions(neighbor_cases)
+            except Exception:
+                pass
+
+        # Serialize interventions to dicts for JSON transport
+        intv_dicts = []
+        for intv in interventions:
+            if hasattr(intv, 'model_dump'):
+                intv_dicts.append(intv.model_dump())
+            elif isinstance(intv, dict):
+                intv_dicts.append(intv)
+            else:
+                intv_dicts.append({
+                    "rank": getattr(intv, 'rank', 0),
+                    "action": getattr(intv, 'action', ''),
+                    "historical_success_rate": getattr(intv, 'historical_success_rate', 0.0),
+                    "similar_cases_count": getattr(intv, 'similar_cases_count', 0),
+                    "median_response_time_hours": getattr(intv, 'median_response_time_hours', None),
+                    "evidence_source": getattr(intv, 'evidence_source', ''),
+                })
+
+        # Add syndrome-specific test recommendations
+        suggested_tests = self._get_syndrome_tests(syndrome) if syndrome else []
+
+        return {
+            "interventions": intv_dicts,
+            "suggested_tests": suggested_tests,
+        }
+
+    def _map_45_to_20(self, features_45) -> np.ndarray:
+        """
+        Map a 45-element feature vector to the existing 20-element space.
+        
+        This is a best-effort mapping. The existing 20 features are:
+          [age, hr, hr_std, sampen_hr, bp_sys, bp_sys_std, sampen_bp_sys,
+           rr, rr_std, sampen_rr, spo2, spo2_std, sampen_spo2,
+           ces, ces_slope, vaso, sedative, bb, opioid, inotrope]
+        
+        We pull matching features from the 45d vector or use sensible defaults.
+        """
+        v = np.zeros(NUM_FEATURES)
+        f = features_45
+        # Direct mappings (approximate positions in 45-feature vector)
+        v[0] = f[0] if len(f) > 0 else 60     # age
+        v[1] = f[1] if len(f) > 1 else 80      # hr_current → mean_hr
+        v[2] = f[4] if len(f) > 4 else 10      # hr_std_6h → std_hr
+        v[3] = f[18] if len(f) > 18 else 1.5   # sampen_hr
+        v[4] = f[6] if len(f) > 6 else 120     # bp_sys_current → mean_bp_sys
+        v[5] = f[9] if len(f) > 9 else 12      # bp_sys_std_6h → std_bp_sys
+        v[6] = f[19] if len(f) > 19 else 1.5   # sampen_bp_sys
+        v[7] = f[10] if len(f) > 10 else 16    # rr_current → mean_rr
+        v[8] = f[13] if len(f) > 13 else 3     # rr_std_6h → std_rr
+        v[9] = f[20] if len(f) > 20 else 1.5   # sampen_rr
+        v[10] = f[14] if len(f) > 14 else 97   # spo2_current → mean_spo2
+        v[11] = f[17] if len(f) > 17 else 2    # spo2_std_6h → std_spo2
+        v[12] = f[21] if len(f) > 21 else 1.5  # sampen_spo2
+        v[13] = f[22] if len(f) > 22 else 0.65 # ces → composite_entropy
+        v[14] = f[24] if len(f) > 24 else 0.0  # ces_slope_6h
+        v[15] = f[32] if len(f) > 32 else 0.0  # vasopressor_active
+        v[16] = f[33] if len(f) > 33 else 0.0  # sedative_active
+        v[17] = f[34] if len(f) > 34 else 0.0  # beta_blocker_active
+        v[18] = f[35] if len(f) > 35 else 0.0  # opioid_active
+        v[19] = f[37] if len(f) > 37 else 0.0  # inotrope_active
+        return v
+
+    def _get_syndrome_tests(self, syndrome: str) -> list:
+        """Return recommended tests for a given syndrome classification."""
+        return self.SYNDROME_TESTS.get(syndrome, [])
+
     @property
     def is_ready(self) -> bool:
         """Check if the engine has been built and is ready for queries."""
