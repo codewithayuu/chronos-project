@@ -1,0 +1,51 @@
+entropy_engine:
+  sampen_m: 2
+  sampen_r_fraction: 0.2
+  window_size: 300
+  min_valid_fraction: 0.8
+  warmup_points: 300
+  mse_scales: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+  weights:
+    heart_rate: 0.25
+    spo2: 0.15
+    bp_systolic: 0.20
+    bp_diastolic: 0.10
+    resp_rate: 0.20
+    temperature: 0.10
+
+  thresholds:
+    none: 0.60
+    watch: 0.40
+    warning: 0.20
+    critical: 0.00
+
+  trend:
+    slope_window: 360
+    rising_threshold: 0.001
+    falling_threshold: -0.001
+
+drug_filter:
+  weight_reduction_factor: 0.5
+  tolerance_fraction: 0.30
+  drug_database_path: "data/drug_database.json"
+
+evidence_engine:
+  k_neighbors: 50
+  min_cases_for_recommendation: 5
+  max_interventions_returned: 5
+  min_distance_threshold: 15.0
+  num_synthetic_cases: 500
+  random_seed: 42
+
+data_replay:
+  speed_multiplier: 60
+  loop: true
+  num_filler_patients: 5
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:5173"
