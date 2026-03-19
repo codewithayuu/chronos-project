@@ -49,3 +49,39 @@ api:
   cors_origins:
     - "http://localhost:3000"
     - "http://localhost:5173"
+
+# ===== NEW ML CONFIG (added by Person 2) =====
+
+ml_models:
+  enabled: true
+  models_dir: "data/models"
+  deterioration_horizons: [1, 4, 8]
+  syndrome_min_confidence: 0.40
+  warmup_entropy_strategy: "population_median"
+  confidence_thresholds:
+    high: 2.0
+    moderate: 3.5
+
+decision_fusion:
+  enabled: true
+  weight_entropy: 0.30
+  weight_trend: 0.15
+  weight_ml: 0.30
+  weight_masking: 0.10
+  weight_news2: 0.15
+  frs_thresholds:
+    watch: 26
+    warning: 46
+    critical: 71
+
+detectors:
+  enabled: true
+  active_detectors:
+    - entropy_threshold
+    - silent_decline
+    - drug_masking
+    - respiratory_risk
+    - hemodynamic
+    - alarm_suppression
+    - recovery
+    - data_quality

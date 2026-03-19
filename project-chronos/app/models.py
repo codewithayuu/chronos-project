@@ -153,3 +153,84 @@ class DrugDatabaseEntry(BaseModel):
     onset_minutes: int
     duration_minutes: int
     entropy_impact: str              # "reduces" | "increases" | "none"
+
+
+# ──────────────────────────────────────────────
+# NEW ML MODELS (added by Person 2)
+# ──────────────────────────────────────────────
+
+class DriverDetail(BaseModel):
+    """A single feature driver contribution from the ML model."""
+    feature: str
+    description: str = ""
+    importance: float = 0.0
+    direction: str = "increases_risk"  # "increases_risk" | "decreases_risk"
+
+
+class DeteriorationRisk(BaseModel):
+    """Deterioration risk predictions at multiple horizons."""
+    risk_1h: float = 0.0
+    risk_4h: float = 0.0
+    risk_8h: float = 0.0
+    model_confidence: str = "moderate"  # "high" | "moderate" | "low"
+    top_drivers: List[DriverDetail] = Field(default_factory=list)
+
+
+class SyndromeClassification(BaseModel):
+    """Syndrome pattern classification output."""
+    primary_syndrome: str = "Stable"
+    primary_confidence: float = 0.0
+    secondary_syndrome: Optional[str] = None
+    secondary_confidence: Optional[float] = None
+    all_probabilities: Dict[str, float] = Field(default_factory=dict)
+    inconclusive: bool = True
+    disclaimer: str = "Pattern similarity assessment, not a clinical diagnosis"
+
+
+class MLPredictions(BaseModel):
+    """Combined ML prediction output attached to patient state."""
+    deterioration_risk: Optional[DeteriorationRisk] = None
+    syndrome: Optional[SyndromeClassification] = None
+    warmup_mode: bool = True
+
+
+class DisagreementInfo(BaseModel):
+    """Disagreement between entropy and ML assessments."""
+    type: str  # "entropy_high_ml_low" | "entropy_low_ml_high"
+    entropy_risk: float = 0.0
+    ml_risk: float = 0.0
+    message: str = ""
+    resolution: str = ""
+
+
+class FusionResult(BaseModel):
+    """Decision Fusion output — the Final Risk Score and severity."""
+    final_risk_score: int = 0
+    final_severity: str = "NONE"  # "NONE" | "WATCH" | "WARNING" | "CRITICAL"
+    time_to_event_estimate: str = "Unknown"
+    component_risks: Dict[str, float] = Field(default_factory=dict)
+    ml_available: bool = False
+    override_applied: Optional[str] = None
+    disagreement: Optional[DisagreementInfo] = None
+
+
+class DetectorResult(BaseModel):
+    """Output of a single clinical detector."""
+    detector_name: str
+    active: bool = False
+    severity: str = "NONE"
+    message: str = ""
+    contributing_factors: List[str] = Field(default_factory=list)
+    recommended_action: str = ""
+
+
+class SuggestedTest(BaseModel):
+    """A syndrome-specific diagnostic test recommendation."""
+    test: str
+    reason: str = ""
+
+
+class Recommendations(BaseModel):
+    """Combined recommendations from evidence engine + syndrome context."""
+    interventions: List[Intervention] = Field(default_factory=list)
+    suggested_tests: List[SuggestedTest] = Field(default_factory=list)
