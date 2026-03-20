@@ -16,8 +16,8 @@ function CorrelationCell({ pair }) {
   }
 
   const isDecoupled = pair.decoupled;
-  const current = pair.current;
-  const expected = pair.expected;
+  const current = pair.current ?? 0;
+  const expected = pair.expected ?? 0;
 
   return (
     <motion.div
@@ -75,7 +75,7 @@ function CorrelationCell({ pair }) {
 
       {isDecoupled && (
         <p className="corr-cell-meaning">
-          {pair.clinical_meaning.split('.')[0]}.
+          {pair.clinical_meaning?.split('.')[0] || 'Correlation anomaly detected'}.
         </p>
       )}
     </motion.div>
@@ -112,9 +112,12 @@ function CorrelationPanel({ patientId }) {
   if (!correlations) return null;
 
   const summary = correlations.summary || {};
-  const pairs = Object.values(correlations);
+  const pairs = Object.entries(correlations)
+    .filter(([key]) => key !== 'summary' && key !== 'status')
+    .map(([, val]) => val)
+    .filter((val) => val && typeof val === 'object' && val.pair_name);
   const decoupledCount = summary.decoupled_count || 0;
-  const totalPairs = summary.total_pairs || 0;
+  const totalPairs = summary.total_pairs || pairs.length;
 
   return (
     <motion.div
