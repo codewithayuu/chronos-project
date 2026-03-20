@@ -2,14 +2,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 20px 0;
+  padding: 8px 16px 0;
 }
 
 /* SVG Container */
 .ces-gauge-svg-container {
   position: relative;
-  width: 180px;
-  height: 120px;
+  width: 160px;
+  height: 105px;
 }
 
 .ces-gauge-svg {
@@ -30,7 +30,7 @@
 
 .ces-gauge-value {
   font-family: var(--font-mono);
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -50,8 +50,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 14px 0 4px;
+  gap: 10px;
+  padding: 8px 0 4px;
   width: 100%;
 }
 

@@ -1,8 +1,8 @@
 .entropy-bars {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 20px 0;
+  gap: 4px;
+  padding: 4px 16px 0;
 }
 
 .entropy-bar-row {

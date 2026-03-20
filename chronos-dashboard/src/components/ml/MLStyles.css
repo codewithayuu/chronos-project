@@ -284,7 +284,8 @@
 .detector-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  padding: 0 16px 12px;
 }
 
 .detector-item {
