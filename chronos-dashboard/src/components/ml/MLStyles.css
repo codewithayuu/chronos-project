@@ -7,13 +7,14 @@
 
 /* MLPredictionPanel */
 .ml-prediction-panel {
-  border-left: 3px solid var(--color-ml-accent);
-  background: var(--bg-card);
-  border-radius: 8px;
-  padding: 16px;
+  border-left: 4px solid var(--color-ml-accent);
+  background: rgba(15, 52, 96, 0.4);
+  backdrop-filter: blur(16px);
+  border-radius: 12px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .ml-panel-header {
@@ -23,13 +24,13 @@
 }
 
 .ml-panel-title {
-  color: var(--color-ml-accent);
+  color: #a29bfe;
   margin: 0;
-  font-size: 1.1em;
-  font-weight: 600;
+  font-size: 1.3em;
+  font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .ml-footer {
@@ -53,16 +54,17 @@
 }
 
 .risk-label {
-  width: 60px;
-  font-size: 0.9em;
+  width: 70px;
+  font-size: 1.1em;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .risk-track {
   flex-grow: 1;
-  background: color-mix(in srgb, var(--bg-primary) 50%, transparent);
-  height: 12px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  height: 16px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
 }
@@ -78,41 +80,45 @@
 }
 
 .risk-pct {
-  width: 40px;
+  width: 50px;
   text-align: right;
-  font-weight: 600;
-  font-size: 0.9em;
+  font-weight: 700;
+  font-size: 1.1em;
 }
 
 .confidence-indicator {
-  font-size: 0.8em;
+  font-size: 1em;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 /* SyndromeDisplay */
 .syndrome-display {
-  background: color-mix(in srgb, var(--bg-primary) 30%, transparent);
-  padding: 12px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .syndrome-primary {
-  font-size: 1.1em;
-  font-weight: 600;
+  font-size: 1.3em;
+  font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .syndrome-secondary {
-  font-size: 0.9em;
+  font-size: 1.1em;
+  font-weight: 600;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 8px;
 }
 
@@ -132,22 +138,24 @@
 .driver-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: color-mix(in srgb, var(--bg-primary) 20%, transparent);
-  padding: 8px;
-  border-radius: 4px;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .driver-number {
-  font-weight: bold;
-  color: var(--text-secondary);
-  font-size: 0.9em;
-  width: 16px;
+  font-weight: 800;
+  color: var(--color-ml-accent);
+  font-size: 1.1em;
+  width: 20px;
 }
 
 .driver-desc {
   flex-grow: 1;
-  font-size: 0.9em;
+  font-size: 1.05em;
+  font-weight: 600;
 }
 
 .driver-bar {
@@ -195,17 +203,19 @@
 }
 
 .gauge-score {
-  font-size: 2em;
-  font-weight: bold;
+  font-size: 2.5em;
+  font-weight: 800;
 }
 
 .gauge-severity {
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 1.25em;
   letter-spacing: 1px;
 }
 
 .gauge-time {
-  font-size: 0.9em;
+  font-size: 1.1em;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -250,31 +260,37 @@
 }
 
 .detector-item {
-  background: color-mix(in srgb, var(--bg-primary) 30%, transparent);
-  padding: 12px;
-  border-radius: 6px;
-  border-left: 3px solid;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .detector-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .detector-name {
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 1.1em;
 }
 
 .detector-msg {
-  font-size: 0.9em;
-  margin: 0 0 4px 0;
+  font-size: 1em;
+  font-weight: 500;
+  margin: 0 0 8px 0;
 }
 
 .detector-action {
-  font-size: 0.8em;
-  color: var(--text-secondary);
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #a29bfe;
   font-style: italic;
   margin: 0;
 }
@@ -362,67 +378,168 @@
 .recommendation-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  padding: 24px;
 }
 
 .recommendation-section-title {
-  font-size: 1em;
-  margin: 0 0 12px 0;
-  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0 0 20px 0;
+  color: var(--text-bright);
+  display: flex;
+  align-items: center;
 }
 
 .recommendation-cards {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
 .intervention-card-ml {
-  background: color-mix(in srgb, var(--bg-primary) 30%, transparent);
-  padding: 12px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 16px;
   display: flex;
+  gap: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.intervention-card-ml:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-ml-accent);
+  transform: translateY(-2px);
+}
+
+.intervention-rank-ml {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(108, 92, 231, 0.15); /* var(--color-ml-accent) with opacity */
+  border: 1px solid rgba(108, 92, 231, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intervention-rank-number-ml {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #a29bfe; /* Light purple */
+}
+
+.intervention-details-ml {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.intervention-action-ml {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.intervention-success-row-ml {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.intervention-success-bar-track-ml {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.intervention-success-bar-fill-ml {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 600ms ease-out;
+}
+
+.intervention-success-pct-ml {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: right;
+}
+
+.intervention-meta-ml {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.intervention-meta-item-ml {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.intervention-source-ml {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 6px 0 0 0;
+}
+
+.tests-list-ml {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.intervention-rank {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: var(--color-ml-accent);
+.test-item-ml {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1.1rem;
 }
 
-.intervention-details {
-  flex-grow: 1;
+.test-name-ml {
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
 }
 
-.intervention-action {
-  font-weight: 600;
-  margin: 0 0 4px 0;
-}
-
-.intervention-stats {
-  font-size: 0.85em;
+.test-reason-ml {
   color: var(--text-secondary);
-  margin: 0;
+  font-weight: 500;
 }
 
-.tests-list {
-  margin: 0;
-  padding-left: 20px;
-  color: var(--text-secondary);
-}
-
-.tests-list li {
-  margin-bottom: 6px;
-  font-size: 0.9em;
-}
-
-.recommendation-footer {
-  font-size: 0.8em;
+.recommendation-footer-ml {
+  font-size: 0.95rem;
   color: var(--text-secondary);
   font-style: italic;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 16px;
+  font-weight: 600;
 }

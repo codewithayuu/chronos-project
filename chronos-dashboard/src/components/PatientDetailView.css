@@ -389,48 +389,55 @@
 
 /* ---- Sidebar Column ---- */
 .detail-sidebar-column {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: start;
+  column-count: 2;
+  column-gap: 16px;
+  display: block;
 }
 
 @media (max-width: 1200px) {
   .detail-sidebar-column {
-    grid-template-columns: 1fr;
+    column-count: 1;
   }
 }
 
+
 /* Panels */
 .detail-panel {
-  border-radius: var(--radius-xl);
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  background: rgba(15, 52, 96, 0.5); /* Glassy background */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid-column;
+  margin-bottom: 16px;
 }
 
 .detail-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 0;
+  padding: 24px 24px 12px;
 }
 
 .detail-panel-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
+  gap: 8px;
+  font-size: 1.25rem; /* Increased size */
+  font-weight: 800; /* Bolder */
+  color: #ffffff;
+  letter-spacing: 0.5px;
 }
 
 .detail-panel-subtitle {
-  font-size: 11px;
-  color: var(--text-dim);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
   font-weight: 500;
+  margin-top: 4px;
 }
 
 .detail-panel-badge {
@@ -458,16 +465,16 @@
 .detail-drugs-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 20px 16px;
+  gap: 8px;
+  padding: 16px 24px 24px;
 }
 
 /* Interventions Panel */
 .detail-interventions-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 20px 0;
+  gap: 12px;
+  padding: 16px 24px 0;
 }
 
 .detail-disclaimer {
