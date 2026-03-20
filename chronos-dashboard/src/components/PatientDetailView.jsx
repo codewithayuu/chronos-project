@@ -26,6 +26,11 @@ import ClinicalScorePanel from './ClinicalScorePanel';
 import CorrelationPanel from './CorrelationPanel';
 import DigitalTwinWrapper from './DigitalTwinWrapper';
 import DrugSimulationPanel from './DrugSimulationPanel';
+import MLPredictionPanel from './ml/MLPredictionPanel';
+import FusionScoreGauge from './ml/FusionScoreGauge';
+import DetectorStatusList from './ml/DetectorStatusList';
+import RecommendationPanel from './ml/RecommendationPanel';
+import DisagreementBanner from './ml/DisagreementBanner';
 import { API_BASE, SEVERITY_CONFIG } from '../utils/constants';
 import { formatTime } from '../utils/helpers';
 import {
@@ -157,7 +162,8 @@ function PatientDetailView({ patients }) {
     );
   }
 
-  const severity = patient.alert?.severity || 'NONE';
+  const baseSeverity = patient.alert?.severity || 'NONE';
+  const severity = patient.fusion?.final_severity || baseSeverity;
   const config = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.NONE;
   const vitals = patient.vitals || {};
   const drugs = patient.active_drugs || [];
@@ -246,6 +252,11 @@ function PatientDetailView({ patients }) {
       {/* Alert Banner */}
       {alert.active && (
         <AlertBanner alert={alert} severity={severity} config={config} />
+      )}
+
+      {/* NEW: Disagreement Banner */}
+      {patient.fusion?.disagreement && (
+        <DisagreementBanner disagreement={patient.fusion.disagreement} />
       )}
 
       {/* Main Content Grid */}
@@ -453,6 +464,15 @@ function PatientDetailView({ patients }) {
             />
           </motion.div>
 
+          {/* NEW: Fusion Score Gauge */}
+          <motion.div className="detail-panel detail-fusion-panel" variants={detailPanelVariants}>
+            <FusionScoreGauge
+              score={patient.fusion?.final_risk_score || 0}
+              severity={patient.fusion?.final_severity || 'NONE'}
+              timeEstimate={patient.fusion?.time_to_event_estimate || 'Unknown'}
+            />
+          </motion.div>
+
           {/* CES History Trend */}
           {chartData && chartData.length > 5 && (
             <motion.div className="detail-panel detail-ces-history-panel" variants={detailPanelVariants}>
@@ -466,6 +486,14 @@ function PatientDetailView({ patients }) {
 
           {/* Digital Twin (Phase 9) */}
           <DigitalTwinWrapper patientId={patientId} />
+
+          {/* NEW: Detectors */}
+          <motion.div className="detail-panel detail-detectors-panel" variants={detailPanelVariants}>
+            <div className="detail-panel-header">
+              <h3 className="detail-panel-title">System Detectors</h3>
+            </div>
+            <DetectorStatusList detectors={patient.detectors || []} />
+          </motion.div>
 
           {/* Clinical Scores (Phase 7) */}
           <ClinicalScorePanel patient={patient} />
@@ -486,6 +514,15 @@ function PatientDetailView({ patients }) {
               vitals={vitals}
               contributingVitals={contributingVitals}
               severityColor={config.color}
+            />
+          </motion.div>
+
+          {/* NEW: ML Prediction Panel */}
+          <motion.div className="detail-panel detail-ml-panel" variants={detailPanelVariants}>
+            <MLPredictionPanel 
+              mlPredictions={patient.ml_predictions}
+              warmupMode={patient.ml_predictions?.warmup_mode}
+              currentPoints={patient.entropy?.window_size || 0}
             />
           </motion.div>
 
@@ -542,6 +579,13 @@ function PatientDetailView({ patients }) {
                   sole responsibility of the treating physician.
                 </p>
               </div>
+            </motion.div>
+          )}
+
+          {/* NEW: Recommendation Panel */}
+          {patient.recommendations && (
+            <motion.div className="detail-panel detail-recommendations-panel" variants={detailPanelVariants}>
+              <RecommendationPanel recommendations={patient.recommendations} />
             </motion.div>
           )}
         </motion.div>

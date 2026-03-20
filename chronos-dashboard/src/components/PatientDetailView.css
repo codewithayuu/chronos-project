@@ -111,14 +111,20 @@
 /* ---- Main Content Grid ---- */
 .detail-content {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1.2fr 2fr; /* Allow more space for sidebar */
   gap: 20px;
   align-items: start;
 }
 
+@media (max-width: 1400px) {
+  .detail-content {
+    grid-template-columns: 1fr 1.5fr;
+  }
+}
+
 @media (max-width: 1200px) {
   .detail-content {
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
 }
@@ -383,9 +389,16 @@
 
 /* ---- Sidebar Column ---- */
 .detail-sidebar-column {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .detail-sidebar-column {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Panels */

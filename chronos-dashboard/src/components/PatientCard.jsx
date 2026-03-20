@@ -12,6 +12,9 @@ import {
 } from '@phosphor-icons/react';
 import EnhancedSparkline from './EnhancedSparkline';
 import AnimatedNumber from './AnimatedNumber';
+import MLMiniIndicator from './ml/MLMiniIndicator';
+import SyndromeTag from './ml/SyndromeTag';
+import WarmupIndicator from './ml/WarmupIndicator';
 import { SEVERITY_CONFIG } from '../utils/constants';
 import { formatVital } from '../utils/helpers';
 import { SPRING_SNAPPY, severityPulse } from '../utils/animations';
@@ -33,7 +36,8 @@ const TrendArrow = React.memo(function TrendArrow({ trend }) {
 
 function PatientCard({ patient, sparklineData }) {
 
-  const severity = patient.alert_severity || patient.alert?.severity || 'NONE';
+  const baseSeverity = patient.alert_severity || patient.alert?.severity || 'NONE';
+  const severity = patient.fusion?.final_severity || baseSeverity;
   const config = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.NONE;
   const ces = patient.composite_entropy;
   const isCalibrating = patient.calibrating;
@@ -242,6 +246,48 @@ function PatientCard({ patient, sparklineData }) {
             </motion.div>
           )}
         </div>
+
+        {/* NEW: Fusion Risk Score */}
+        {patient.fusion && !patient.ml_predictions?.warmup_mode && (
+          <div className="card-frs" style={{ marginTop: '8px', padding: '0 12px' }}>
+            <span className={`frs-score severity-${patient.fusion.final_severity.toLowerCase()}`} style={{ fontWeight: 'bold' }}>
+              FRS: {patient.fusion.final_risk_score}/100
+            </span>
+          </div>
+        )}
+
+        {/* NEW: ML Mini Risk Bar */}
+        {patient.ml_predictions?.deterioration_risk && !patient.ml_predictions?.warmup_mode && (
+          <div style={{ padding: '4px 12px' }}>
+            <MLMiniIndicator 
+              risk4h={patient.ml_predictions.deterioration_risk.risk_4h}
+              available={!patient.ml_predictions.warmup_mode}
+            />
+          </div>
+        )}
+
+        {/* NEW: Syndrome + Detector Tags */}
+        <div className="card-tags" style={{ display: 'flex', gap: '4px', padding: '4px 12px', flexWrap: 'wrap' }}>
+          {patient.ml_predictions?.syndrome && !patient.ml_predictions?.warmup_mode && (
+            <SyndromeTag 
+              syndromeName={patient.ml_predictions.syndrome.primary_syndrome}
+              confidence={patient.ml_predictions.syndrome.primary_confidence}
+            />
+          )}
+          {patient.detectors?.filter(d => d.active && d.detector_name === 'drug_masking').map(d => (
+            <span key="mask" className="tag tag-drug-masked" style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '10px', background: 'color-mix(in srgb, var(--color-ml-accent) 20%, transparent)', color: 'var(--color-ml-accent)' }}>Drug-masked</span>
+          ))}
+        </div>
+
+        {/* NEW: Warmup Indicator (replace FRS section during warmup) */}
+        {patient.ml_predictions?.warmup_mode && (
+          <div style={{ padding: '8px 12px' }}>
+            <WarmupIndicator 
+              currentPoints={patient.entropy?.window_size || (windowFill * 300) || 0}
+              totalPoints={300}
+            />
+          </div>
+        )}
       </motion.div>
     </div>
   );

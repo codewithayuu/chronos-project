@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PatientCard from './PatientCard';
 import SystemStatusBar from './SystemStatusBar';
@@ -11,6 +12,8 @@ import {
 import './WardView.css';
 
 function WardView({ patients, sparklines, connected, systemStatus }) {
+  const navigate = useNavigate();
+
   const sortedPatients = useMemo(
     () => sortPatientsBySeverity(patients),
     [patients]
@@ -100,6 +103,8 @@ function WardView({ patients, sparklines, connected, systemStatus }) {
             variants={wardCardVariants}
             layout
             layoutId={`card-shell-${patient.patient_id}`}
+            onClick={() => navigate(`/patient/${patient.patient_id}`)}
+            style={{ cursor: 'pointer', animationDelay: `${index * 60}ms` }}
             transition={{
               layout: {
                 type: 'spring',
@@ -108,7 +113,6 @@ function WardView({ patients, sparklines, connected, systemStatus }) {
                 mass: 0.9,
               },
             }}
-            style={{ animationDelay: `${index * 60}ms` }}
           >
             <PatientCard
               patient={patient}
