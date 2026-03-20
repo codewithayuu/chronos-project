@@ -24,20 +24,37 @@
 }
 
 .ml-panel-title {
-  color: #a29bfe;
-  margin: 0;
-  font-size: 1.3em;
-  font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.ml-panel-content-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.3fr;
+  gap: 32px;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
+.ml-panel-left-col,
+.ml-panel-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .ml-footer {
-  font-size: 0.8em;
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-top: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  font-weight: 600;
 }
 
 /* RiskTimelineChart */
@@ -343,6 +360,7 @@
   display: block;
   margin-bottom: 4px;
 }
+
 
 /* MLMiniIndicator */
 .ml-mini-indicator {

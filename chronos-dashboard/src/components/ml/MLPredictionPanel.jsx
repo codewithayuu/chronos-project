@@ -29,17 +29,25 @@ function MLPredictionPanel({ mlPredictions, warmupMode, currentPoints }) {
     <div className="ml-prediction-panel">
       <div className="ml-panel-header">
         <h3 className="ml-panel-title">
-          <Brain size={20} weight="duotone" /> 
+          <Brain size={24} weight="duotone" style={{ color: 'var(--color-ml-accent)' }} /> 
           AI Risk Analysis
         </h3>
       </div>
       
-      <RiskTimelineChart risks={mlPredictions.deterioration_risk} />
-      <SyndromeDisplay syndrome={mlPredictions.syndrome} />
-      <FeatureDriversList drivers={mlPredictions.deterioration_risk.top_drivers} />
+      <div className="ml-panel-content-grid">
+        <div className="ml-panel-left-col">
+          <RiskTimelineChart risks={mlPredictions.deterioration_risk} />
+          <SyndromeDisplay syndrome={mlPredictions.syndrome} />
+        </div>
+        
+        <div className="ml-panel-right-col">
+          <FeatureDriversList drivers={mlPredictions.deterioration_risk.top_drivers} />
+        </div>
+      </div>
       
       <div className="ml-footer">
-        ℹ️ Trained on 100 real + 700 synthetic ICU trajectories
+        <span className="info-icon">ℹ️</span>
+        Trained on 100 real + 700 synthetic ICU trajectories
       </div>
     </div>
   );

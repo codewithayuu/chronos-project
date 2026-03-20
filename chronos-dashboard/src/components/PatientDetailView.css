@@ -111,8 +111,9 @@
 /* ---- Main Content Grid ---- */
 .detail-content {
   display: grid;
-  grid-template-columns: 1.5fr 2fr; /* Balanced more for moved widgets on left */
-  gap: 20px;
+  grid-template-columns: 1fr 1.1fr 1.2fr;
+  /* Three-column primary layout */
+  gap: 24px;
   align-items: start;
 }
 
@@ -239,7 +240,7 @@
 .detail-compare-btn {
   padding: 5px 12px;
   border: 1px solid var(--border-subtle);
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -258,33 +259,27 @@
 }
 
 .legend-dashed {
-  background: repeating-linear-gradient(
-    90deg,
-    var(--chart-entropy) 0px,
-    var(--chart-entropy) 4px,
-    transparent 4px,
-    transparent 7px
-  );
+  background: repeating-linear-gradient(90deg,
+      var(--chart-entropy) 0px,
+      var(--chart-entropy) 4px,
+      transparent 4px,
+      transparent 7px);
 }
 
 .legend-dotted {
-  background: repeating-linear-gradient(
-    90deg,
-    var(--chart-threshold) 0px,
-    var(--chart-threshold) 2px,
-    transparent 2px,
-    transparent 5px
-  );
+  background: repeating-linear-gradient(90deg,
+      var(--chart-threshold) 0px,
+      var(--chart-threshold) 2px,
+      transparent 2px,
+      transparent 5px);
 }
 
 .legend-drug {
-  background: repeating-linear-gradient(
-    90deg,
-    var(--chart-drug-marker) 0px,
-    var(--chart-drug-marker) 4px,
-    transparent 4px,
-    transparent 7px
-  );
+  background: repeating-linear-gradient(90deg,
+      var(--chart-drug-marker) 0px,
+      var(--chart-drug-marker) 4px,
+      transparent 4px,
+      transparent 7px);
 }
 
 /* Charts Stack */
@@ -318,12 +313,10 @@
 .skeleton-bar {
   height: 12px;
   border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.04) 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.04) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -339,12 +332,10 @@
 .skeleton-chart-area {
   height: 90px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.02) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0.02) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -387,24 +378,26 @@
   transform: scale(0.96);
 }
 
-/* ---- Sidebar Column ---- */
+/* ---- Sidebar Column (Middle) ---- */
 .detail-sidebar-column {
-  column-count: 2;
-  column-gap: 16px;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-@media (max-width: 1200px) {
-  .detail-sidebar-column {
-    column-count: 1;
-  }
+/* ---- Right Column ---- */
+.detail-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 
 /* Panels */
 .detail-panel {
   border-radius: 20px;
-  background: rgba(15, 52, 96, 0.5); /* Glassy background */
+  background: rgba(15, 52, 96, 0.5);
+  /* Glassy background */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -427,8 +420,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.25rem; /* Increased size */
-  font-weight: 800; /* Bolder */
+  font-size: 1.25rem;
+  /* Increased size */
+  font-weight: 800;
+  /* Bolder */
   color: #ffffff;
   letter-spacing: 0.5px;
 }
@@ -524,7 +519,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .detail-loading-title {

@@ -68,7 +68,7 @@ function PatientDetailView({ patients }) {
     setHistoryError(null);
     try {
       const res = await fetch(
-        `${API_BASE}/api/v1/patients/${patientId}/history?hours=${hours}` 
+        `${API_BASE}/api/v1/patients/${patientId}/history?hours=${hours}`
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -463,9 +463,20 @@ function PatientDetailView({ patients }) {
               severityColor={config.color}
             />
           </motion.div>
+
+          {/* Moved from right to left as requested */}
+          <ClinicalScorePanel patient={patient} />
+
+          <motion.div className="detail-panel detail-ml-panel" variants={detailPanelVariants}>
+            <MLPredictionPanel
+              mlPredictions={patient.ml_predictions}
+              warmupMode={patient.ml_predictions?.warmup_mode}
+              currentPoints={patient.entropy?.window_size || 0}
+            />
+          </motion.div>
         </motion.div>
 
-        {/* Right Column: Entropy + Interventions */}
+        {/* Middle Column: Entropy Scoring + Monitoring */}
         <motion.div
           className="detail-sidebar-column"
           variants={detailColumnVariants}
@@ -485,7 +496,7 @@ function PatientDetailView({ patients }) {
             />
           </motion.div>
 
-          {/* NEW: Fusion Score Gauge */}
+          {/* Fusion Score Gauge */}
           <motion.div className="detail-panel detail-fusion-panel" variants={detailPanelVariants}>
             <FusionScoreGauge
               score={patient.fusion?.final_risk_score || 0}
@@ -505,33 +516,16 @@ function PatientDetailView({ patients }) {
             </motion.div>
           )}
 
-          {/* Digital Twin (Phase 9) */}
+          {/* Digital Twin */}
           <DigitalTwinWrapper patientId={patientId} />
 
-          {/* NEW: Detectors */}
+          {/* Detectors */}
           <motion.div className="detail-panel detail-detectors-panel" variants={detailPanelVariants}>
             <div className="detail-panel-header">
               <h3 className="detail-panel-title">System Detectors</h3>
             </div>
             <DetectorStatusList detectors={patient.detectors || []} />
           </motion.div>
-
-          {/* Clinical Scores (Phase 7) */}
-          <ClinicalScorePanel patient={patient} />
-
-          {/* Re-located to left column for better layout density */}
-
-          {/* NEW: ML Prediction Panel */}
-          <motion.div className="detail-panel detail-ml-panel" variants={detailPanelVariants}>
-            <MLPredictionPanel 
-              mlPredictions={patient.ml_predictions}
-              warmupMode={patient.ml_predictions?.warmup_mode}
-              currentPoints={patient.entropy?.window_size || 0}
-            />
-          </motion.div>
-
-          {/* Drug Simulation Lab (Phase B) removed as requested */}
-          {/* <DrugSimulationPanel patientId={patientId} patient={patient} /> */}
 
           {/* Active Drugs */}
           {drugs.length > 0 && (
@@ -550,7 +544,15 @@ function PatientDetailView({ patients }) {
               </div>
             </motion.div>
           )}
+        </motion.div>
 
+        {/* Right Column: Interventions + Recommendations */}
+        <motion.div
+          className="detail-right-column"
+          variants={detailColumnVariants}
+          initial="initial"
+          animate="animate"
+        >
           {/* Interventions */}
           {interventions.length > 0 && (
             <motion.div className="detail-panel detail-interventions-panel" variants={detailPanelVariants}>
@@ -586,7 +588,7 @@ function PatientDetailView({ patients }) {
             </motion.div>
           )}
 
-          {/* NEW: Recommendation Panel */}
+          {/* Recommendation Panel */}
           {patient.recommendations && (
             <motion.div className="detail-panel detail-recommendations-panel" variants={detailPanelVariants}>
               <RecommendationPanel recommendations={patient.recommendations} />
