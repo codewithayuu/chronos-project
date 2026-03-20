@@ -433,18 +433,18 @@
 }
 
 .intervention-card-ml:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--color-ml-accent);
-  transform: translateY(-2px);
+  background: rgba(41, 121, 255, 0.07);
+  border-color: rgba(41, 121, 255, 0.3);
+  transform: translateX(4px);
 }
 
 .intervention-rank-ml {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(108, 92, 231, 0.15); /* var(--color-ml-accent) with opacity */
-  border: 1px solid rgba(108, 92, 231, 0.3);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(162, 155, 254, 0.1);
+  border: 1px solid rgba(162, 155, 254, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -452,79 +452,82 @@
 
 .intervention-rank-number-ml {
   font-family: var(--font-mono);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 900;
-  color: #a29bfe; /* Light purple */
+  color: #a29bfe;
 }
 
 .intervention-details-ml {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
 }
 
 .intervention-action-ml {
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: #fff;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .intervention-success-row-ml {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 4px;
+  gap: 16px;
 }
 
 .intervention-success-bar-track-ml {
   flex: 1;
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.3);
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .intervention-success-bar-fill-ml {
   height: 100%;
-  border-radius: 4px;
-  transition: width 600ms ease-out;
+  border-radius: 5px;
+  transition: width 800ms var(--ease-out-expo);
+  box-shadow: 0 0 12px -2px currentColor;
 }
 
 .intervention-success-pct-ml {
   font-family: var(--font-mono);
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  color: var(--text-primary);
-  min-width: 40px;
+  min-width: 52px;
   text-align: right;
 }
 
 .intervention-meta-ml {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 6px;
+  gap: 24px;
+  margin-top: 4px;
 }
 
 .intervention-meta-item-ml {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .intervention-source-ml {
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   color: var(--text-dim);
+  font-weight: 500;
   font-style: italic;
-  margin: 6px 0 0 0;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .tests-list-ml {
@@ -533,15 +536,22 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .test-item-ml {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 16px;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  padding: 20px 24px;
+  border-radius: 16px;
+  font-size: 1.25rem;
+  transition: all 0.2s;
+}
+
+.test-item-ml:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .test-name-ml {
@@ -553,15 +563,17 @@
 .test-reason-ml {
   color: var(--text-secondary);
   font-weight: 500;
+  margin-left: 8px;
 }
 
 .recommendation-footer-ml {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
+  font-size: 1.1rem;
+  color: var(--text-dim);
   font-style: italic;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  font-weight: 600;
+  gap: 12px;
+  margin-top: 32px;
+  font-weight: 700;
+  opacity: 0.8;
 }

@@ -36,10 +36,10 @@ function RecommendationPanel({ recommendations }) {
                       <div className="intervention-success-bar-track-ml">
                         <div 
                           className="intervention-success-bar-fill-ml" 
-                          style={{ width: `${successPct}%`, background: successPct > 70 ? 'var(--color-green)' : 'var(--color-yellow)' }} 
+                          style={{ width: `${successPct}%`, background: successPct > 70 ? 'var(--color-none)' : 'var(--color-watch)' }} 
                         />
                       </div>
-                      <span className="intervention-success-pct-ml">{successPct}%</span>
+                      <span className="intervention-success-pct-ml" style={{ color: successPct > 70 ? 'var(--color-none)' : 'var(--color-watch)' }}>{successPct}%</span>
                     </div>
 
                     <div className="intervention-meta-ml">
