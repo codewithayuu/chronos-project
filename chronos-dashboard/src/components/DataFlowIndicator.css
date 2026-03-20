@@ -1,11 +1,12 @@
 .data-flow-indicator {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .data-flow-rate {
@@ -15,17 +16,19 @@
 
 .data-flow-value {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-primary);
-  min-width: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-bright);
+  min-width: 14px;
   text-align: center;
 }
 
 .data-flow-label {
   font-size: 10px;
   color: var(--text-dim);
-  font-weight: 500;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .data-flow-dot {

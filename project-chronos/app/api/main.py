@@ -32,19 +32,76 @@ async def replay_loop(app: FastAPI):
     speed = int(os.environ.get("CHRONOS_SPEED", "60"))
     loop_replay = os.environ.get("CHRONOS_LOOP", "true").lower() == "true"
 
-    print(f"[Replay] Generating demo dataset...")
-    dataset = DataGenerator.generate_demo_dataset()
+    print(f"[Replay] Preparing dataset from MIMIC-IV resources...")
+    from ..data.synthetic_generator import MIMICIngester, generate_trajectory_simulations, select_hero_cases
+    from ..data.generator import PatientCase, DrugEvent
+    from ..models import VitalSignRecord
+    from datetime import datetime, timedelta
+    import numpy as np
+    
+    rng = np.random.RandomState(42)
+    ingester = MIMICIngester("data/mimic-iv-demo")
+    real_trajs = ingester.ingest()
+    
+    sim_trajs = generate_trajectory_simulations(patients_per_template=10, rng=rng)
+    heroes = select_hero_cases(sim_trajs)
+    
+    all_trajs = []
+    
+    # 1. Add our 3 Hero Cases (Sepsis, Resp, Cardiac)
+    for hero_name, traj in heroes.items():
+        all_trajs.append((f"MIMIC-{hero_name}", f"{hero_name.replace('hero_', '').title()}", traj))
+        
+    # 2. Add 2 Deteriorating cases (but not critical yet)
+    deteriorating = [s for s in sim_trajs if s.label_syndrome in ['hemodynamic_instability', 'respiratory_failure', 'cardiac_instability']]
+    for i, traj in enumerate(deteriorating[:2]):
+        all_trajs.append((f"MIMIC-WARD-{i+10}", f"Patient {i+10} ({traj.label_syndrome[:4].title()})", traj))
+        
+    # 3. Fill the rest of the ward with stable cases so we have 10-12 total
+    stable = [s for s in sim_trajs if s.label_syndrome == 'stable']
+    for i, traj in enumerate(stable[:7]):
+        all_trajs.append((f"MIMIC-WARD-{i+20}", f"Patient {i+20} (Stable)", traj))
+
+    dataset = []
+    base_time = datetime.utcnow()
+    for p_id, p_name, traj in all_trajs:
+        records = []
+        for minute in range(traj.duration_minutes):
+            ts = base_time + timedelta(minutes=minute)
+            records.append(VitalSignRecord(
+                patient_id=p_id, timestamp=ts,
+                heart_rate=round(float(traj.vitals["hr"][minute]), 1),
+                spo2=round(float(traj.vitals["spo2"][minute]), 1),
+                bp_systolic=round(float(traj.vitals["bp_sys"][minute]), 1),
+                bp_diastolic=round(float(traj.vitals["bp_dia"][minute]), 1),
+                resp_rate=round(float(traj.vitals["rr"][minute]), 1),
+                temperature=round(float(traj.vitals["temp"][minute]), 2),
+            ))
+        drug_events = []
+        for d in (traj.drugs if hasattr(traj, 'drugs') and traj.drugs else []):
+            drug_events.append(DrugEvent(
+                minute=d["minute"], drug_name=d["drug_name"],
+                drug_class=d.get("drug_class"), dose=d.get("dose", 0),
+                unit=d.get("unit", "mg")
+            ))
+        dataset.append(PatientCase(
+            patient_id=p_id, name=p_name,
+            description=f"Source: {'Real MIMIC' if 'REAL' in p_id else 'MIMIC-IV Template'}",
+            records=records, drug_events=drug_events,
+            duration_minutes=traj.duration_minutes
+        ))
 
     replay = ReplayService(manager, manager.config)
     replay.load_cases(dataset)
 
     print(
         f"[Replay] Loaded {len(dataset)} patients, "
-        f"max duration: {max(c.duration_minutes for c in dataset)} min"
+        f"max duration: {max((c.duration_minutes for c in dataset), default=0)} min"
     )
     print(f"[Replay] Speed: {speed}x, Loop: {loop_replay}")
 
     tick = 0
+    total_records = 0
 
     # Wait briefly for server to be fully ready
     await asyncio.sleep(1.0)
@@ -92,6 +149,7 @@ async def replay_loop(app: FastAPI):
                 if not replay.is_running:
                     break
                 replay.tick()
+                total_records += len(replay._cases)
                 for case in replay._cases:
                     if replay._current_minute <= len(case.records):
                         state = manager.get_patient_state(case.patient_id)
@@ -130,7 +188,7 @@ async def replay_loop(app: FastAPI):
                     })
 
             tick += 1
-            if tick % 30 == 0:
+            if tick % 1 == 0:
                 progress = replay.progress * 100
                 active_alerts = len(manager.get_active_alerts())
                 print(
@@ -144,6 +202,8 @@ async def replay_loop(app: FastAPI):
                     "active_patients": len(last_states),
                     "active_alerts": active_alerts,
                     "ws_clients": ws.client_count,
+                    "total_records_processed": total_records,
+                    "messages_per_second": len(last_states),
                 })
 
             await asyncio.sleep(1.0)
@@ -271,13 +331,15 @@ def create_app() -> FastAPI:
                         "event": "patient_update",
                         "data": state_dict,
                     })
-            elif summaries:
-                await websocket.send_json({
-                    "event": "initial_state",
-                    "data": [
-                        s.model_dump(mode="json") for s in summaries
-                    ],
-                })
+            else:
+                summaries = manager.get_all_summaries()
+                if summaries:
+                    await websocket.send_json({
+                        "event": "initial_state",
+                        "data": [
+                            s.model_dump(mode="json") for s in summaries
+                        ],
+                    })
             while True:
                 try:
                     data = await asyncio.wait_for(

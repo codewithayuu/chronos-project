@@ -23,7 +23,7 @@ function ScoreGauge({ label, score, maxScore, risk, color }) {
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 50%, transparent))`,
+            background: color,
           }}
         />
       </div>

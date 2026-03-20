@@ -46,7 +46,7 @@ function InterventionCard({ intervention, index }) {
                 ease: [0.16, 1, 0.3, 1],
               }}
               style={{
-                background: `linear-gradient(90deg, ${successColor}, color-mix(in srgb, ${successColor} 60%, transparent))`,
+                background: successColor,
               }}
             />
           </div>

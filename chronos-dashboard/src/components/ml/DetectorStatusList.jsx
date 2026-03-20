@@ -14,10 +14,10 @@ const DETECTOR_NAMES = {
 };
 
 const SEVERITY_COLORS = {
-  'NONE': 'var(--color-green)',
-  'WATCH': 'var(--color-yellow)',
-  'WARNING': 'var(--color-orange)',
-  'CRITICAL': 'var(--color-red)'
+  'NONE': 'var(--color-none)',
+  'WATCH': 'var(--color-watch)',
+  'WARNING': 'var(--color-warning)',
+  'CRITICAL': 'var(--color-critical)'
 };
 
 function DetectorStatusList({ detectors }) {

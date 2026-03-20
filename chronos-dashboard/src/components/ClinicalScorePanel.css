@@ -18,49 +18,52 @@
 }
 
 .score-gauge-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-secondary);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
 }
 
 .score-gauge-risk {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .score-gauge-bar-track {
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.06);
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
+  margin: 4px 0;
 }
 
 .score-gauge-bar-fill {
   height: 100%;
-  border-radius: var(--radius-full);
+  border-radius: 6px;
 }
 
 .score-gauge-value-row {
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  gap: 4px;
 }
 
 .score-gauge-value {
   font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
 .score-gauge-max {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text-dim);
 }
 

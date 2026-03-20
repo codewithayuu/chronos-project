@@ -78,38 +78,42 @@ function Header({
 
           <nav className="header-stats" aria-label="System statistics">
             <div className="header-stat">
-              <Activity size={14} weight="bold" color="var(--text-secondary)" aria-hidden="true" />
-              <motion.span
-                className="header-stat-value"
-                key={patientCount}
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ ...SPRING_SNAPPY }}
-                aria-label={`${patientCount} patients monitored`}
-              >
-                {patientCount}
-              </motion.span>
-              <span className="header-stat-label" aria-hidden="true">Patients</span>
+              <Activity size={16} weight="bold" color="var(--accent-teal)" aria-hidden="true" />
+              <div className="header-stat-group">
+                <motion.span
+                  className="header-stat-value"
+                  key={patientCount}
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...SPRING_SNAPPY }}
+                  aria-label={`${patientCount} patients monitored`}
+                >
+                  {patientCount}
+                </motion.span>
+                <span className="header-stat-label" aria-hidden="true">Patients</span>
+              </div>
             </div>
 
-            {systemStatus && (
-              <>
-                <div className="header-stat-divider" aria-hidden="true" />
-                <div className="header-stat">
-                  <CircleDashed size={14} weight="bold" color="var(--text-secondary)" aria-hidden="true" />
-                  <span
-                    className="header-stat-value"
-                    aria-label={`${systemStatus.total_records_processed?.toLocaleString() || 0} records processed`}
-                  >
-                    {systemStatus.total_records_processed?.toLocaleString() || '--'}
-                  </span>
-                  <span className="header-stat-label" aria-hidden="true">Records</span>
-                </div>
-              </>
-            )}
+            <div className="header-stat-divider" aria-hidden="true" />
+
+            <div className="header-stat">
+              <CircleDashed size={16} weight="bold" color="var(--accent-teal)" aria-hidden="true" />
+              <div className="header-stat-group">
+                <span
+                  className="header-stat-value"
+                  aria-label={`${systemStatus?.total_records_processed?.toLocaleString() || 0} records processed`}
+                >
+                  {systemStatus?.total_records_processed?.toLocaleString() || '--'}
+                </span>
+                <span className="header-stat-label" aria-hidden="true">Records</span>
+              </div>
+            </div>
 
             <div className="header-stat-divider" aria-hidden="true" />
-            <DataFlowIndicator patients={patients || {}} />
+            
+            <div className="header-stat">
+               <DataFlowIndicator patients={patients || {}} messagesPerSec={systemStatus?.messages_per_second} />
+            </div>
           </nav>
 
           <div className="header-actions">

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowsClockwise } from '@phosphor-icons/react';
 import { detailPanelVariants } from '../utils/animations';
 
-function DataFlowIndicator({ patients }) {
+function DataFlowIndicator({ patients, messagesPerSec }) {
   const [ratePerSec, setRatePerSec] = useState(0);
   const lastPatients = useRef(patients);
   const countRef = useRef(0);
@@ -25,18 +25,21 @@ function DataFlowIndicator({ patients }) {
     if (changes > 0) {
       countRef.current += changes;
     }
-    setRatePerSec(changes / 1); // Move this line here
     lastPatients.current = patients;
   }, [patients]);
 
   // Calculate rate every second
   useEffect(() => {
     const interval = setInterval(() => {
-      setRatePerSec(countRef.current);
+      if (messagesPerSec !== undefined) {
+        setRatePerSec(messagesPerSec);
+      } else {
+        setRatePerSec(countRef.current);
+      }
       countRef.current = 0;
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [messagesPerSec]);
 
   return (
     <div className="data-flow-indicator">

@@ -25,7 +25,7 @@ import NarrativePanel from './NarrativePanel';
 import ClinicalScorePanel from './ClinicalScorePanel';
 import CorrelationPanel from './CorrelationPanel';
 import DigitalTwinWrapper from './DigitalTwinWrapper';
-import DrugSimulationPanel from './DrugSimulationPanel';
+// import DrugSimulationPanel from './DrugSimulationPanel';
 import MLPredictionPanel from './ml/MLPredictionPanel';
 import FusionScoreGauge from './ml/FusionScoreGauge';
 import DetectorStatusList from './ml/DetectorStatusList';
@@ -442,6 +442,27 @@ function PatientDetailView({ patients }) {
               </motion.div>
             </motion.div>
           )}
+
+          {/* Moved from right to left as requested to fill space */}
+          <motion.div className="detail-panel detail-coupling-panel" variants={detailPanelVariants} style={{ marginTop: '20px' }}>
+            <CorrelationPanel patientId={patientId} />
+          </motion.div>
+
+          <motion.div className="detail-panel detail-narrative-panel" variants={detailPanelVariants}>
+            <NarrativePanel patientId={patientId} />
+          </motion.div>
+
+          <motion.div className="detail-panel detail-entropy-panel" variants={detailPanelVariants}>
+            <div className="detail-panel-header">
+              <h3 className="detail-panel-title">Per-Vital Entropy</h3>
+              <span className="detail-panel-subtitle">Normalized complexity (0-1)</span>
+            </div>
+            <EntropyBars
+              vitals={vitals}
+              contributingVitals={contributingVitals}
+              severityColor={config.color}
+            />
+          </motion.div>
         </motion.div>
 
         {/* Right Column: Entropy + Interventions */}
@@ -498,24 +519,7 @@ function PatientDetailView({ patients }) {
           {/* Clinical Scores (Phase 7) */}
           <ClinicalScorePanel patient={patient} />
 
-          {/* Organ Coupling (Phase 7) */}
-          <CorrelationPanel patientId={patientId} />
-
-          {/* Clinical Narrative (Phase 7) */}
-          <NarrativePanel patientId={patientId} />
-
-          {/* Per-Vital Entropy Bars */}
-          <motion.div className="detail-panel detail-entropy-panel" variants={detailPanelVariants}>
-            <div className="detail-panel-header">
-              <h3 className="detail-panel-title">Per-Vital Entropy</h3>
-              <span className="detail-panel-subtitle">Normalized complexity (0-1)</span>
-            </div>
-            <EntropyBars
-              vitals={vitals}
-              contributingVitals={contributingVitals}
-              severityColor={config.color}
-            />
-          </motion.div>
+          {/* Re-located to left column for better layout density */}
 
           {/* NEW: ML Prediction Panel */}
           <motion.div className="detail-panel detail-ml-panel" variants={detailPanelVariants}>
@@ -526,8 +530,8 @@ function PatientDetailView({ patients }) {
             />
           </motion.div>
 
-          {/* Drug Simulation Lab (Phase B) */}
-          <DrugSimulationPanel patientId={patientId} patient={patient} />
+          {/* Drug Simulation Lab (Phase B) removed as requested */}
+          {/* <DrugSimulationPanel patientId={patientId} patient={patient} /> */}
 
           {/* Active Drugs */}
           {drugs.length > 0 && (

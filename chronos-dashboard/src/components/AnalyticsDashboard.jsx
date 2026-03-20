@@ -43,13 +43,15 @@ function StatCard({ icon, label, value, sublabel, color }) {
     <motion.div
       className="analytics-stat-card"
       variants={detailPanelVariants}
-      whileHover={{ y: -2, transition: { ...SPRING_SNAPPY } }}
+      whileHover={{ y: -4, background: 'rgba(255, 255, 255, 0.05)' }}
     >
-      <div className="stat-card-icon" style={{ color: color || 'var(--accent-teal)' }}>
-        {icon}
+      <div className="stat-card-header">
+        <div className="stat-card-icon" style={{ borderColor: color ? `${color}40` : 'rgba(255, 255, 255, 0.1)', color: color || 'var(--accent-teal)' }}>
+          {icon}
+        </div>
       </div>
       <div className="stat-card-content">
-        <span className="stat-card-value" style={{ color: color || 'var(--text-primary)' }}>
+        <span className="stat-card-value" style={{ color: color || '#fff' }}>
           {value}
         </span>
         <span className="stat-card-label">{label}</span>
@@ -350,7 +352,7 @@ function AnalyticsDashboard() {
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.8, delay: idx * 0.05, ease: [0.16, 1, 0.3, 1] }}
                         style={{
-                          background: `linear-gradient(90deg, ${config.color}, color-mix(in srgb, ${config.color} 40%, transparent))`,
+                          background: config.color,
                         }}
                       />
                     </div>

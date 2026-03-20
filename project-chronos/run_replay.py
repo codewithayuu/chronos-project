@@ -41,7 +41,7 @@ def main():
     rng = np.random.RandomState(42)
     
     # Check for real MIMIC data
-    ingester = MIMICIngester("project-chronos/data/mimic-iv-demo")
+    ingester = MIMICIngester("data/mimic-iv-demo")
     real_trajs = ingester.ingest()
     
     # Also generate simulations for the hero cases (ensures we show clear deterioration examples)
