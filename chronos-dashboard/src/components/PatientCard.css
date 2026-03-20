@@ -125,8 +125,8 @@
 
 .card-patient-id {
   font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--text-bright);
   letter-spacing: 0.02em;
 }
@@ -164,10 +164,10 @@
 
 .card-ces-value {
   font-family: var(--font-mono);
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 34px;
+  font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   transition: color var(--duration-fast) ease;
 }
 
@@ -228,8 +228,8 @@
 
 .card-vital-value {
   font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
@@ -262,4 +262,26 @@
 
 .card-time-tag svg {
   color: var(--color-watch);
+}
+
+/* New Risk Row */
+.card-risk-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  margin-top: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.frs-score {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.card-tags {
+  margin-top: 8px;
 }

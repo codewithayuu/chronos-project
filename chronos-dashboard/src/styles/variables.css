@@ -21,10 +21,10 @@
   --color-critical-border: #4d0015;
 
   /* Text */
-  --text-primary: #e8e8f0;
-  --text-secondary: #6b6b8d;
+  --text-primary: #f0f0f7;
+  --text-secondary: #9494b8;
   --text-bright: #ffffff;
-  --text-dim: #4a4a6a;
+  --text-dim: #71719a;
 
   /* Charts */
   --chart-line: #4fc3f7;

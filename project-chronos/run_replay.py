@@ -30,10 +30,82 @@ def main():
     delay = 1.0 / args.speed if args.speed > 0 else 1.0
     api_url = f"{args.url}/api/v1"
 
-    print(f"🔄 Generating demo dataset...")
-    dataset = DataGenerator.generate_demo_dataset()
+    print(f"🔄 Preparing dataset from MIMIC-IV resources...")
     
-    # Create a local pipeline for replay service
+    from app.data.synthetic_generator import MIMICIngester, generate_trajectory_simulations, select_hero_cases
+    from app.models import VitalSignRecord
+    from app.data.generator import PatientCase, DrugEvent
+    from datetime import datetime, timedelta
+    import numpy as np
+    
+    rng = np.random.RandomState(42)
+    
+    # Check for real MIMIC data
+    ingester = MIMICIngester("project-chronos/data/mimic-iv-demo")
+    real_trajs = ingester.ingest()
+    
+    # Also generate simulations for the hero cases (ensures we show clear deterioration examples)
+    sim_trajs = generate_trajectory_simulations(patients_per_template=10, rng=rng)
+    
+    # Select the most distinct "Hero" cases from simulations to highlight ML features
+    heroes = select_hero_cases(sim_trajs)
+    
+    # Combine real data with heroes for a complete ward view
+    all_trajs = []
+    
+    # Start with heroes (so bed 01, 02, 03 are the interesting ones)
+    for hero_name, traj in heroes.items():
+        all_trajs.append((f"MIMIC-{hero_name}", f"{hero_name.replace('hero_', '').title()} Case", traj))
+        
+    # Add real data points if any exist
+    for i, traj in enumerate(real_trajs[:10]): # Limit to first 10 real patients
+        all_trajs.append((f"MIMIC-REAL-{traj.subject_id}", f"MIMIC Patient {traj.subject_id}", traj))
+        
+    # If no real data, fill out with simulations
+    if not real_trajs:
+        stable = [s for s in sim_trajs if s.label_syndrome == 'stable'][:7]
+        for i, traj in enumerate(stable):
+            all_trajs.append((f"MIMIC-SIM-{i}", f"Simulated Patient {i}", traj))
+
+    # Convert to PatientCase format
+    dataset = []
+    base_time = datetime.utcnow()
+    
+    for p_id, p_name, traj in all_trajs:
+        records = []
+        for minute in range(traj.duration_minutes):
+            ts = base_time + timedelta(minutes=minute)
+            records.append(VitalSignRecord(
+                patient_id=p_id,
+                timestamp=ts,
+                heart_rate=round(float(traj.vitals["hr"][minute]), 1),
+                spo2=round(float(traj.vitals["spo2"][minute]), 1),
+                bp_systolic=round(float(traj.vitals["bp_sys"][minute]), 1),
+                bp_diastolic=round(float(traj.vitals["bp_dia"][minute]), 1),
+                resp_rate=round(float(traj.vitals["rr"][minute]), 1),
+                temperature=round(float(traj.vitals["temp"][minute]), 2),
+            ))
+            
+        drug_events = []
+        for d in (traj.drugs if hasattr(traj, 'drugs') and traj.drugs else []):
+            drug_events.append(DrugEvent(
+                minute=d["minute"],
+                drug_name=d["drug_name"],
+                drug_class=d.get("drug_class"),
+                dose=d.get("dose", 0),
+                unit=d.get("unit", "mg")
+            ))
+            
+        dataset.append(PatientCase(
+            patient_id=p_id,
+            name=p_name,
+            description=f"Source: {'Real MIMIC' if 'REAL' in p_id else 'MIMIC-IV Template'}",
+            records=records,
+            drug_events=drug_events,
+            duration_minutes=traj.duration_minutes
+        ))
+
+    # Create a local pipeline and load cases
     config = load_config()
     pipeline = PatientManager(config)
     replay = ReplayService(pipeline, config)

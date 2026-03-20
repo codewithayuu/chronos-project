@@ -343,9 +343,10 @@
 .ml-mini-indicator {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8em;
-  margin-top: 4px;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
 }
 
 .ml-mini-na {
@@ -368,10 +369,26 @@
 /* SyndromeTag */
 .syndrome-tag {
   font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 800;
   white-space: nowrap;
+  letter-spacing: 0.2px;
+  background: rgba(108, 92, 231, 0.15);
+  border: 1px solid rgba(108, 92, 231, 0.3);
+  color: #a29bfe;
+}
+
+.tag-drug-masked {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  background: rgba(255, 215, 64, 0.1);
+  border: 1px solid rgba(255, 215, 64, 0.2);
+  color: var(--color-watch);
 }
 
 /* RecommendationPanel */

@@ -247,22 +247,22 @@ function PatientCard({ patient, sparklineData }) {
           )}
         </div>
 
-        {/* NEW: Fusion Risk Score */}
-        {patient.fusion && !patient.ml_predictions?.warmup_mode && (
-          <div className="card-frs" style={{ marginTop: '8px', padding: '0 12px' }}>
-            <span className={`frs-score severity-${patient.fusion.final_severity.toLowerCase()}`} style={{ fontWeight: 'bold' }}>
-              FRS: {patient.fusion.final_risk_score}/100
-            </span>
-          </div>
-        )}
-
-        {/* NEW: ML Mini Risk Bar */}
-        {patient.ml_predictions?.deterioration_risk && !patient.ml_predictions?.warmup_mode && (
-          <div style={{ padding: '4px 12px' }}>
-            <MLMiniIndicator 
-              risk4h={patient.ml_predictions.deterioration_risk.risk_4h}
-              available={!patient.ml_predictions.warmup_mode}
-            />
+        {/* NEW: Risk Stats Row (FRS + ML) */}
+        {!patient.ml_predictions?.warmup_mode && (patient.fusion || (patient.ml_predictions?.deterioration_risk)) && (
+          <div className="card-risk-stats-row">
+            {patient.fusion && (
+              <div className="card-frs">
+                <span className={`frs-score severity-${patient.fusion.final_severity.toLowerCase()}`}>
+                  FRS: {patient.fusion.final_risk_score}/100
+                </span>
+              </div>
+            )}
+            {patient.ml_predictions?.deterioration_risk && (
+              <MLMiniIndicator 
+                risk4h={patient.ml_predictions.deterioration_risk.risk_4h}
+                available={true}
+              />
+            )}
           </div>
         )}
 
@@ -275,7 +275,7 @@ function PatientCard({ patient, sparklineData }) {
             />
           )}
           {patient.detectors?.filter(d => d.active && d.detector_name === 'drug_masking').map(d => (
-            <span key="mask" className="tag tag-drug-masked" style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '10px', background: 'color-mix(in srgb, var(--color-ml-accent) 20%, transparent)', color: 'var(--color-ml-accent)' }}>Drug-masked</span>
+            <span key="mask" className="tag tag-drug-masked">Drug-masked</span>
           ))}
         </div>
 
