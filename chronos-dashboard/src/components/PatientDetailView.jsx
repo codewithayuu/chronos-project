@@ -452,20 +452,7 @@ function PatientDetailView({ patients }) {
             <NarrativePanel patientId={patientId} />
           </motion.div>
 
-          <motion.div className="detail-panel detail-entropy-panel" variants={detailPanelVariants}>
-            <div className="detail-panel-header">
-              <h3 className="detail-panel-title">Per-Vital Entropy</h3>
-              <span className="detail-panel-subtitle">Normalized complexity (0-1)</span>
-            </div>
-            <EntropyBars
-              vitals={vitals}
-              contributingVitals={contributingVitals}
-              severityColor={config.color}
-            />
-          </motion.div>
 
-          {/* Moved from right to left as requested */}
-          <ClinicalScorePanel patient={patient} />
 
           <motion.div className="detail-panel detail-ml-panel" variants={detailPanelVariants}>
             <MLPredictionPanel
@@ -526,6 +513,22 @@ function PatientDetailView({ patients }) {
             </div>
             <DetectorStatusList detectors={patient.detectors || []} />
           </motion.div>
+
+          {/* Per-Vital Entropy */}
+          <motion.div className="detail-panel detail-entropy-panel" variants={detailPanelVariants}>
+            <div className="detail-panel-header">
+              <h3 className="detail-panel-title">Per-Vital Entropy</h3>
+              <span className="detail-panel-subtitle">Normalized complexity (0-1)</span>
+            </div>
+            <EntropyBars
+              vitals={vitals}
+              contributingVitals={contributingVitals}
+              severityColor={config.color}
+            />
+          </motion.div>
+
+          {/* Clinical Scores */}
+          <ClinicalScorePanel patient={patient} />
 
           {/* Active Drugs */}
           {drugs.length > 0 && (
